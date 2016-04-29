@@ -73,24 +73,20 @@ class GLPlotWidget(QGLWidget):
             self, QtOpenGL.QGLFormat(QtOpenGL.QGL.SampleBuffers), parent)
         self.installEventFilter(self)
         self.set_data()
-        self.show()
 
     def keyPressEvent(self, event):
         e = event.key()
-        print("c")
         # if e == QtCore.Qt.Key_Return:  # repeat previous action
         self.set_data()
+        # self.vbo = glvbo.VBO(self.data, usage='GL_STREAM_DRAW_ARB')
         self.vbo.set_array(self.data)
-        self.position_location = gl.glGetAttribLocation(self.shaders_program,
-                                                'a_position')
-        self.color_location = gl.glGetAttribLocation(self.shaders_program,
-                                             'a_fg_color')
-        self.paintGL()
-        
+
+        self.updateGL()
+
     def set_data(self):
         # generate random data points
         n = 5000
-        thicknesses = 0.001*np.random.uniform(0, 1, (n, 1))
+        thicknesses = 0.01*np.random.uniform(0, 1, (n, 1))
         line_ends = np.random.uniform(-1, 1, size=(n, 6))
         normals = np.empty(shape=(n, 3))
         normals[:, 0] = line_ends[:, 4] - line_ends[:, 1]
@@ -114,7 +110,7 @@ class GLPlotWidget(QGLWidget):
         # background color
         gl.glClearColor(0, 0, 0, 0)
         # create a Vertex Buffer Object with the specified data
-        self.vbo = glvbo.VBO(self.data)
+        self.vbo = glvbo.VBO(self.data, usage='GL_STREAM_DRAW_ARB')
         # compile the vertex shader
         vs = compile_vertex_shader(VS)
         # compile the fragment shader
@@ -183,6 +179,7 @@ if __name__ == '__main__':
             self.show()
         def keyPressEvent(self, event):
             self.widget.keyPressEvent(event)
+            self.update()
     # create the Qt App and window
     app = QtGui.QApplication(sys.argv)
     window = TestWindow()
