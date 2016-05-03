@@ -26,7 +26,7 @@ void main()
 }
 """
 
-
+# from http://cyrille.rossant.net/shaders-opengl/
 def compile_vertex_shader(source):
     """Compile a vertex shader from source."""
     vertex_shader = gl.glCreateShader(gl.GL_VERTEX_SHADER)
@@ -38,7 +38,7 @@ def compile_vertex_shader(source):
         raise RuntimeError(gl.glGetShaderInfoLog(vertex_shader))
     return vertex_shader
 
-
+# from http://cyrille.rossant.net/shaders-opengl/
 def compile_fragment_shader(source):
     """Compile a fragment shader from source."""
     fragment_shader = gl.glCreateShader(gl.GL_FRAGMENT_SHADER)
@@ -50,7 +50,7 @@ def compile_fragment_shader(source):
         raise RuntimeError(gl.glGetShaderInfoLog(fragment_shader))
     return fragment_shader
 
-
+# from http://cyrille.rossant.net/shaders-opengl/
 def link_shader_program(vertex_shader, fragment_shader):
     """Create a shader program with from compiled shaders."""
     program = gl.glCreateProgram()
