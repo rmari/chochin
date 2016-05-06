@@ -75,26 +75,23 @@ class ChochinCanvas(QGLWidget):
         self.object_types = []
 
         # sticks
-        line_ends = pos["s"]
-        if line_ends is not None:
-            thicknesses = attrs["s"]["r"]
-            colors = attrs["s"]["@"]
-            self.objects["s"].set_data(line_ends, thicknesses, colors)
+        if "s" in pos:
+            self.objects["s"].set_data(pos["s"],
+                                       attrs["s"]["r"],
+                                       attrs["s"]["@"])
             self.object_types.append("s")
 
         # lines
-        line_ends = pos["l"]
-        if line_ends is not None:
-            colors = attrs["l"]["@"]
-            self.objects["l"].set_data(line_ends, colors)
+        if "l" in pos:
+            self.objects["l"].set_data(pos["l"],
+                                       attrs["l"]["@"])
             self.object_types.append("l")
 
         # circles
-        centers = pos["c"]
-        if centers is not None:
-            radii = attrs["c"]["r"]
-            colors = attrs["c"]["@"]
-            self.objects["c"].set_data(centers, radii, colors)
+        if "c" in pos:
+            self.objects["c"].set_data(pos["c"],
+                                       attrs["c"]["r"],
+                                       attrs["c"]["@"])
             self.object_types.append("c")
 
     def setXRotation(self, angleX):

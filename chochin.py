@@ -22,6 +22,20 @@ from PyQt4 import QtGui, QtCore
 
 import chochinCanvas as cCanvas
 
+
+class SceneInfoWidget(QtGui.QWidget):
+    def __init__(self, parent, width, height):
+        super(SceneInfoWidget, self).__init__(parent=parent)
+
+        self.setGeometry(0, 0, width, height)
+
+        pal = self.palette()
+        pal.setColor(self.backgroundRole(),
+                     QtGui.QColor(200, 0, 0, 255))
+        self.setAutoFillBackground(True)
+        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground, 50)
+        self.show()
+
 if __name__ == '__main__':
     import sys
 
@@ -32,12 +46,16 @@ if __name__ == '__main__':
             super(ChochinWindow, self).__init__()
 
             # initialize the GL widget
-            self.widget = cCanvas.ChochinCanvas()
-            # put the window at the screen position (100, 100)
-            self.setGeometry(100, 100, self.widget.width, self.widget.height)
-            self.setCentralWidget(self.widget)
+            self.datawidget = cCanvas.ChochinCanvas()
+            self.setGeometry(100,
+                             100,
+                             self.datawidget.width,
+                             self.datawidget.height)
+            self.setCentralWidget(self.datawidget)
+
+            self.scene_info_widget = SceneInfoWidget(self, 100, 100)
             self.show()
-            self.widget.setFile(filename)
+            self.datawidget.setFile(filename)
 
         def keyPressEvent(self, event):
             e = event.key()
@@ -46,9 +64,8 @@ if __name__ == '__main__':
             elif e == QtCore.Qt.Key_V:
                 self.verbosity = not self.verbosity
             else:
-                self.widget.keyPressEvent(event)
-            self.update()
-    # create the Qt App and window
+                self.datawidget.keyPressEvent(event)
+
     app = QtGui.QApplication(sys.argv)
     window = ChochinWindow(sys.argv[1])
     window.show()

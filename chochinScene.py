@@ -23,6 +23,7 @@ class chochinScene:
     def __init__(self, obj_vals, obj_attrs):
         self.obj_vals = obj_vals
         self.obj_attrs = obj_attrs
+        self.rotated = False
 
     def getBoundaries(self):
         minima = None
@@ -60,6 +61,10 @@ class chochinScene:
                                           object_layer_attr == d)
         return np.nonzero(displayed_idx)[0]
 
+    def setRotation(self, rotation):
+        self.rotation = rotation
+        self.rotated = False
+
     def rotate(self, positions):
         dim = positions.shape[1]
         if dim == 3:
@@ -67,6 +72,7 @@ class chochinScene:
         if dim == 6:
             rotated_pos = np.hstack((np.dot(positions[:, :3], self.rotation),
                                      np.dot(positions[:, 3:6], self.rotation)))
+        self.rotated = True
         return rotated_pos
 
     def processObject(self, obj_pos, obj_attrs):
@@ -88,9 +94,10 @@ class chochinScene:
     def getDisplayedScene(self):
         displayed_pos = {}
         displayed_attrs = {}
-        ks = self.obj_vals.keys()
-        for k in ks:
+        for k in self.obj_vals:
             displayed_pos[k], displayed_attrs[k] =\
                 self.processObject(self.obj_vals[k], self.obj_attrs[k])
+            if displayed_pos[k] is None:
+                del displayed_pos[k]
             # displayed_attrs[k]['@'][:, 3] *= 0.1
         return displayed_pos, displayed_attrs
