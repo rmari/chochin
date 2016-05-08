@@ -75,6 +75,12 @@ class chochinScene:
         self.rotated = True
         return rotated_pos
 
+    def pushAway(self, positions, dist):
+        positions[:, 2] += dist
+        if positions.shape[1] == 6:
+            positions[:, 5] += dist
+        return positions
+
     def processObject(self, obj_pos, obj_attrs):
         #  filter out layers
         displayed_idx = self.filterLayers(self.layer_list, obj_attrs['y'])
@@ -86,6 +92,8 @@ class chochinScene:
 
             #  rotate the scene
             displayed_pos = self.rotate(displayed_pos)
+            displayed_pos = self.pushAway(displayed_pos,
+                                          self.getLargestDimension()/2.)
 
             return displayed_pos, displayed_attrs
         else:

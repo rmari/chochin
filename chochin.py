@@ -18,6 +18,8 @@
 #
 
 # PyQt4 imports
+from PyQt4.QtCore import Qt, QTimer
+from PyQt4.QtGui import *
 from PyQt4 import QtGui, QtCore
 
 import chochinCanvas as cCanvas
@@ -29,12 +31,39 @@ class SceneInfoWidget(QtGui.QWidget):
 
         self.setGeometry(0, 0, width, height)
 
-        pal = self.palette()
-        pal.setColor(self.backgroundRole(),
-                     QtGui.QColor(200, 0, 0, 255))
-        self.setAutoFillBackground(True)
-        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground, 50)
+        palette = QtGui.QPalette(self.palette())
+        palette.setColor(palette.Background, QtCore.Qt.transparent)
+        self.setPalette(palette)
+        # pal = QtGui.QPalette()
+        # self.setBackgroundRole(QtGui.QPalette.Window)
+        # pal.setColor(self.backgroundRole(),
+                    #  QtGui.QColor(200, 0, 0, 0))
+                    # self.setAutoFillBackground(True)
+        # self.setPalette(pal)
+        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         self.show()
+def paintEvent(self, event):
+
+    painter = QPainter()
+    painter.begin(self)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.fillRect(event.rect(), QBrush(QColor(255, 255, 255, 127)))
+    painter.setPen(QPen(Qt.NoPen))
+    self.counter = 0
+    for i in range(6):
+        if (self.counter / 5) % 6 == i:
+            painter.setBrush(QBrush(QColor(127 + (self.counter % 5)*32, 127, 127)))
+    else:
+        painter.setBrush(QBrush(QColor(127, 127, 127)))
+        painter.drawEllipse(
+         self.width()/2 + 30 * math.cos(2 * math.pi * i / 6.0) -                  self.height()/2 + 30 * math.sin(2 * math.pi * i / 6.0) -                  20, 20)
+
+    painter.end()
+    # def paintEvent(self, event):
+    #     backgroundColor = QtGui.QColor(200, 0, 0, 0)
+    #     backgroundColor.setAlpha(200)
+    #     customPainter = QtGui.QPainter(self)
+    #     customPainter.fillRect(self.rect(),backgroundColor)
 
 if __name__ == '__main__':
     import sys
@@ -65,7 +94,7 @@ if __name__ == '__main__':
                 self.verbosity = not self.verbosity
             else:
                 self.datawidget.keyPressEvent(event)
-
+            self.scene_info_widget.update()
     app = QtGui.QApplication(sys.argv)
     window = ChochinWindow(sys.argv[1])
     window.show()

@@ -55,7 +55,7 @@ class ChochinCanvas(QGLWidget):
         self.reset_rotation[1, 2] = 1
         self.reset_rotation[2, 1] = 1
         self.rotation = self.reset_rotation[:]
-        self.scale = 2./self.scene.getLargestDimension()
+        self.scale = 1./self.scene.getLargestDimension()
 
         self.setSceneGeometry()
 
@@ -364,11 +364,8 @@ class ChochinCanvas(QGLWidget):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
         """
         # background color
-        gl.glClearColor(1, 1, 1, 1)
-        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glEnable(gl.GL_BLEND)
-        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+        self.configureGL()
+
         self.objects = {}
         self.objects["s"] = cPrim.Sticks()
         self.objects["c"] = cPrim.Circles()
@@ -377,9 +374,9 @@ class ChochinCanvas(QGLWidget):
         self.setPortSize(min(self.width, self.height))
         self.offset = self.init_offset
 
-    def paintGL(self):
-        """Paint the scene.
-        """
+    def glpaint(self):
+    # def paintGL(self):
+
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -394,6 +391,47 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_linewidth', 1)
             self.objects["c"].set_uniform('u_antialias', 1)
             self.objects["c"].draw()
+
+    def configureGL(self):
+        gl.glClearColor(1, 1, 1, 1)
+        gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glEnable(gl.GL_DEPTH_TEST)
+        gl.glEnable(gl.GL_BLEND)
+        gl.glEnable(gl.GL_MULTISAMPLE)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
+    def enableGLPainting(self, qpainter):
+        qpainter.beginNativePainting()
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPushMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPushMatrix()
+        self.configureGL()
+        self.setViewPort()
+        # set orthographic projection (2D only)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glLoadIdentity()
+        # the window corner OpenGL coordinates are (-+1, -+1)
+        gl.glOrtho(-1, 1, 1, -1, -1, 1)
+
+    def disableGLPainting(self, qpainter):
+        gl.glDisable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
+        gl.glDisable(gl.GL_DEPTH_TEST)
+        gl.glDisable(gl.GL_BLEND)
+        gl.glDisable(gl.GL_MULTISAMPLE)
+        gl.glMatrixMode(gl.GL_PROJECTION)
+        gl.glPopMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPopMatrix()
+        qpainter.endNativePainting()
+
+    def paintEvent(self, event):
+        p = QtGui.QPainter(self)
+
+        self.enableGLPainting(p)
+        self.glpaint()
+        self.disableGLPainting(p)
+
 
     def setPortSize(self, size):
         self.port_size = int(size)
