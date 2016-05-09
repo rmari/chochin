@@ -30,7 +30,6 @@ import chochinScene as cScene
 
 class ChochinCanvas(QGLWidget):
     width, height = 600, 600
-    timer = QtCore.QBasicTimer()
     speed = 10
     forward_anim = True
     frame = 0
@@ -111,7 +110,7 @@ class ChochinCanvas(QGLWidget):
         self.rotation = generator*self.rotation
 
     def start_anim(self):
-        self.timer.start(self.speed, self)
+        self.parent().timer.start(self.speed, self.parent())
 
     def goToFrame(self, n):
         frame_nb = len(self.data.frames)
@@ -124,7 +123,7 @@ class ChochinCanvas(QGLWidget):
         self.loadScene()
 
     def timerEvent(self, event):
-        if event.timerId() == self.timer.timerId():
+        if event.timerId() == self.parent().timer.timerId():
             if self.forward_anim:
                 self.goToFrame(self.frame + 1)
             else:
@@ -188,8 +187,8 @@ class ChochinCanvas(QGLWidget):
             caught = True
 
         if caught and stop_anim:
-            if self.timer.isActive():
-                self.timer.stop()
+            if self.parent().timer.isActive():
+                self.parent().timer.stop()
 
         return caught
 
@@ -308,7 +307,7 @@ class ChochinCanvas(QGLWidget):
     def keyPressEvent(self, event):
         e = event.key()
         m = event.modifiers()
-        if e == QtCore.Qt.Key_Return:  # repeat previous action
+        if e == QtCore.Qt.Key_Return and self.old_e is not None:
             e, m, self.prefactor = self.old_e, self.old_m, self.old_prefactor
         self.old_prefactor = self.prefactor
         caught = self.handleKey(e, m)
@@ -374,6 +373,73 @@ class ChochinCanvas(QGLWidget):
         self.setPortSize(min(self.width, self.height))
         self.offset = self.init_offset
 
+    # def writeLabels(self, painter):
+    #     Padding = 6
+    #     Margin = 11
+    #     textDocument = QtGui.QTextDocument()
+    #     textDocument.setDefaultStyleSheet("* { color: #FFFFFF }")
+    #     textDocument.setHtml("<h4 align=\"center\">Vowel Categories</h4>")
+    #     textDocument.setTextWidth(textDocument.size().width())
+    #
+    #     rect = QtCore.QRect(QtCore.QPoint(0, 0), textDocument.size().toSize()
+    #                         + QtCore.QSize(2 * Padding, 2 * Padding))
+    #     painter.translate(self.width - rect.width() - Margin,
+    #                       self.height - rect.height() - Margin)
+    #     painter.setPen(QtGui.QColor(0, 239, 239, 100))
+    #     painter.setBrush(QtGui.QColor(200, 0, 0, 31))
+    #     painter.drawRect(rect)
+    #     textDocument.drawContents(painter)
+
+    def writeLabels(self, paint):
+        pen = QtGui.QPen()
+
+        rlocation = [15, 15]
+        topleft = QtCore.QPoint(-10, -10)
+        bottomright = QtCore.QPoint(-10, 10)
+
+        bgcolor = QtGui.QColor(0, 0, 0, 150)
+        rect = QtCore.QRect(topleft, bottomright)
+        print(rect)
+        brush = QtGui.QBrush()
+        brush.setColor(bgcolor)
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        paint.setBrush(brush)
+        pen.setColor(bgcolor)
+        pen.setWidth(0)
+        paint.setPen(pen)
+        paint.drawRect(rect)
+
+        # activecolor = QtCore.Qt.white
+        # inactivecolor = QtCore.Qt.gray
+        #
+        # rsize = [120, 18]
+        #
+        # pen.setColor(activecolor)
+        # paint.setPen(pen)
+        # rect = QtCore.QRectF(*rlocation, *rsize)
+        # # paint.drawText(rect, QtCore.Qt.AlignLeft,
+        #             #    "Frame "+str(self.frame+1)+" (n p)")
+        # rlocation[1] = rlocation[1]+rsize[1]
+        # rsize = [95, 18]
+        # pen.setColor(activecolor)
+        # paint.setPen(pen)
+        # rect = QtCore.QRectF(*rlocation, *rsize)
+        # paint.drawText(rect, QtCore.Qt.AlignLeft,
+        #                "Texture "+str(self.fidelity)+" (+ -)")
+
+        # rlocation[1] = rlocation[1]+rsize[1]
+        # rsize = [100, 18]
+        # for i in range(self.layer_nb):
+        #     rect = QtCore.QRectF(rlocation[0], rlocation[1]+(i+1)*rsize[1],
+        #                          rsize[0], rsize[1])
+        #     if self.layer_activity[i]:
+        #         pen.setColor(activecolor)
+        #     else:
+        #         pen.setColor(inactivecolor)
+        #
+        #     paint.setPen(pen)
+        #     paint.drawText(rect, QtCore.Qt.AlignLeft, self.layer_labels[i])
+
     def glpaint(self):
     # def paintGL(self):
 
@@ -418,7 +484,7 @@ class ChochinCanvas(QGLWidget):
         gl.glDisable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glDisable(gl.GL_DEPTH_TEST)
         gl.glDisable(gl.GL_BLEND)
-        gl.glDisable(gl.GL_MULTISAMPLE)
+        # gl.glDisable(gl.GL_MULTISAMPLE)
         gl.glMatrixMode(gl.GL_PROJECTION)
         gl.glPopMatrix()
         gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -431,7 +497,9 @@ class ChochinCanvas(QGLWidget):
         self.enableGLPainting(p)
         self.glpaint()
         self.disableGLPainting(p)
-
+        # p.begin(self)
+        # self.writeLabels(p)
+        # p.end()
 
     def setPortSize(self, size):
         self.port_size = int(size)
