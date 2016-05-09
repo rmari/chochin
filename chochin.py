@@ -30,6 +30,8 @@ class SceneInfoWidget(QtGui.QWidget):
                         for a, b in zip(range(15, 150, 25), ([50]*6))]
     layer_info_boxes += [QtCore.QRectF(a, b, 20, 20)
                          for a, b in zip(range(15, 150, 25), ([75]*6))]
+    font = QtGui.QFont()
+    font.setPixelSize(12)
 
     def __init__(self, parent, width, height):
         super(SceneInfoWidget, self).__init__(parent=parent)
@@ -66,15 +68,11 @@ class SceneInfoWidget(QtGui.QWidget):
         painter.drawText(rect, QtCore.Qt.AlignCenter, str(layer_nb))
 
     def paintEvent(self, event):
-        pen = QtGui.QPen()
-        brush = QtGui.QBrush()
-        brush.setStyle(QtCore.Qt.SolidPattern)
 
         painter = QtGui.QPainter()
         painter.begin(self)
-        painter.setPen(pen)
-        painter.setBrush(brush)
 
+        painter.setFont(self.font)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
 
         painter.setPen(QtCore.Qt.white)
