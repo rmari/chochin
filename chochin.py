@@ -95,6 +95,10 @@ if __name__ == '__main__':
             else:
                 self.datawidget.keyPressEvent(event)
             self.scene_info_widget.update()
+
+    if len(sys.argv) < 2:
+        print("Usage:\n chochin.py input_file")
+        exit(1)
     app = QtGui.QApplication(sys.argv)
     window = ChochinWindow(sys.argv[1])
     window.show()
