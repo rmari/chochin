@@ -85,6 +85,7 @@ class chochinScene:
         #  filter out layers
         displayed_idx = self.filterLayers(self.layer_list, obj_attrs['y'])
         if len(displayed_idx) > 0:
+            # print(displayed_idx, obj_attrs)
             displayed_pos = obj_pos[displayed_idx]
             displayed_attrs = {}
             for k in obj_attrs:
@@ -107,5 +108,5 @@ class chochinScene:
                 self.processObject(self.obj_vals[k], self.obj_attrs[k])
             if displayed_pos[k] is None:
                 del displayed_pos[k]
-            # displayed_attrs[k]['@'][:, 3] *= 0.1
+
         return displayed_pos, displayed_attrs

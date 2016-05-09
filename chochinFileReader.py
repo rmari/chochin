@@ -231,19 +231,17 @@ class chochinFileReader:
 
         texts_idx = np.nonzero(cmd == 't')[0]
         if len(texts_idx):
-            texts =\
+            texts_str =\
                 np.array([t[-1].decode().strip("\n") for t in
                           charray.split(in_raw_data[texts_idx], maxsplit=4)])
-            texts_xyz = np.genfromtxt(in_raw_data[texts_idx],
+            texts_pos = np.genfromtxt(in_raw_data[texts_idx],
                                       usecols=[1, 2, 3], dtype=np.float32)
-            texts_xyz[:, 2] = -texts_xyz[:, 2]
-            texts_pos = (texts_xyz, texts)
+            texts_pos[:, 2] = -texts_pos[:, 2]
             texts_colors = colors[texts_idx]
             texts_layers = layers[texts_idx]
             tbreaks = np.digitize(framebreaks, texts_idx)
-            texts_xyz = np.split(texts_xyz, tbreaks)
-            texts = np.split(texts, tbreaks)
-            texts_pos = list(zip(texts_xyz, texts))
+            texts_pos = np.split(texts_pos, tbreaks)
+            texts_str = np.split(texts_str, tbreaks)
             texts_colors = np.split(texts_colors, tbreaks)
             texts_layers = np.split(texts_layers, tbreaks)
 
@@ -280,7 +278,8 @@ class chochinFileReader:
             if len(texts_idx) and len(texts_pos[i]):
                 obj_vals[o] = texts_pos[i]
                 obj_attrs[o] = {'y': texts_layers[i],
-                                '@': texts_colors[i]}
+                                '@': texts_colors[i],
+                                's': texts_str[i]}
 
             self.frames.append([obj_vals, obj_attrs])
         self.is_init = False

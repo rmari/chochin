@@ -93,6 +93,11 @@ class ChochinCanvas(QGLWidget):
                                        attrs["c"]["@"])
             self.object_types.append("c")
 
+        # texts
+        if "t" in pos:
+            self.objects["t"] = (pos["t"], attrs["t"])
+            self.object_types.append("t")
+
     def setXRotation(self, angleX):
         sinAngleX = np.sin(angleX)
         cosAngleX = np.cos(angleX)
@@ -373,75 +378,21 @@ class ChochinCanvas(QGLWidget):
         self.setPortSize(min(self.width, self.height))
         self.offset = self.init_offset
 
-    # def writeLabels(self, painter):
-    #     Padding = 6
-    #     Margin = 11
-    #     textDocument = QtGui.QTextDocument()
-    #     textDocument.setDefaultStyleSheet("* { color: #FFFFFF }")
-    #     textDocument.setHtml("<h4 align=\"center\">Vowel Categories</h4>")
-    #     textDocument.setTextWidth(textDocument.size().width())
-    #
-    #     rect = QtCore.QRect(QtCore.QPoint(0, 0), textDocument.size().toSize()
-    #                         + QtCore.QSize(2 * Padding, 2 * Padding))
-    #     painter.translate(self.width - rect.width() - Margin,
-    #                       self.height - rect.height() - Margin)
-    #     painter.setPen(QtGui.QColor(0, 239, 239, 100))
-    #     painter.setBrush(QtGui.QColor(200, 0, 0, 31))
-    #     painter.drawRect(rect)
-    #     textDocument.drawContents(painter)
-
-    def writeLabels(self, paint):
-        pen = QtGui.QPen()
-
-        rlocation = [15, 15]
-        topleft = QtCore.QPoint(-10, -10)
-        bottomright = QtCore.QPoint(-10, 10)
-
-        bgcolor = QtGui.QColor(0, 0, 0, 150)
-        rect = QtCore.QRect(topleft, bottomright)
-        print(rect)
-        brush = QtGui.QBrush()
-        brush.setColor(bgcolor)
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        paint.setBrush(brush)
-        pen.setColor(bgcolor)
-        pen.setWidth(0)
-        paint.setPen(pen)
-        paint.drawRect(rect)
-
-        # activecolor = QtCore.Qt.white
-        # inactivecolor = QtCore.Qt.gray
-        #
-        # rsize = [120, 18]
-        #
-        # pen.setColor(activecolor)
-        # paint.setPen(pen)
-        # rect = QtCore.QRectF(*rlocation, *rsize)
-        # # paint.drawText(rect, QtCore.Qt.AlignLeft,
-        #             #    "Frame "+str(self.frame+1)+" (n p)")
-        # rlocation[1] = rlocation[1]+rsize[1]
-        # rsize = [95, 18]
-        # pen.setColor(activecolor)
-        # paint.setPen(pen)
-        # rect = QtCore.QRectF(*rlocation, *rsize)
-        # paint.drawText(rect, QtCore.Qt.AlignLeft,
-        #                "Texture "+str(self.fidelity)+" (+ -)")
-
-        # rlocation[1] = rlocation[1]+rsize[1]
-        # rsize = [100, 18]
-        # for i in range(self.layer_nb):
-        #     rect = QtCore.QRectF(rlocation[0], rlocation[1]+(i+1)*rsize[1],
-        #                          rsize[0], rsize[1])
-        #     if self.layer_activity[i]:
-        #         pen.setColor(activecolor)
-        #     else:
-        #         pen.setColor(inactivecolor)
-        #
-        #     paint.setPen(pen)
-        #     paint.drawText(rect, QtCore.Qt.AlignLeft, self.layer_labels[i])
+    def writeTexts(self, painter):
+        painter.setPen(QtCore.Qt.black)
+        if "t" in self.object_types:
+            pos, attrs = np.array(self.objects["t"][0]), self.objects["t"][1]
+            pos *= 0.5*self.port_size*self.scale
+            pos[:, [0, 1]] += 0.5*self.port_size
+            for i in range(len(pos)):
+                painter.setPen(QtGui.QColor(*(attrs["@"][i])))
+                painter.setPen(QtCore.Qt.black)
+                painter.drawText(pos[i][0],
+                                 pos[i][1],
+                                 attrs["s"][i])
 
     def glpaint(self):
-    # def paintGL(self):
+        # def paintGL(self): # if no paintEvent
 
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -457,6 +408,7 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_linewidth', 1)
             self.objects["c"].set_uniform('u_antialias', 1)
             self.objects["c"].draw()
+
 
     def configureGL(self):
         gl.glClearColor(1, 1, 1, 1)
@@ -497,8 +449,9 @@ class ChochinCanvas(QGLWidget):
         self.enableGLPainting(p)
         self.glpaint()
         self.disableGLPainting(p)
+
         # p.begin(self)
-        # self.writeLabels(p)
+        self.writeTexts(p)
         # p.end()
 
     def setPortSize(self, size):
