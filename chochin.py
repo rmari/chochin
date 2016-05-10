@@ -83,9 +83,9 @@ class SceneInfoWidget(QtGui.QWidget):
                          "Frame "+str(self.frame+1)+" (n p)")
         for i in range(len(self.layers)):
             if self.layers[i]:
-                self.drawActiveLayer(painter, self.layer_info_boxes[i], i)
+                self.drawActiveLayer(painter, self.layer_info_boxes[i], i+1)
             else:
-                self.drawInactiveLayer(painter, self.layer_info_boxes[i], i)
+                self.drawInactiveLayer(painter, self.layer_info_boxes[i], i+1)
 
         painter.end()
 

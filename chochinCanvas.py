@@ -52,7 +52,7 @@ class ChochinCanvas(QGLWidget):
         self.reset_rotation = np.zeros((3, 3))
         self.reset_rotation[0, 0] = 1
         self.reset_rotation[1, 2] = 1
-        self.reset_rotation[2, 1] = 1
+        self.reset_rotation[2, 1] = -1
         self.rotation = self.reset_rotation[:]
         self.scale = 1./self.scene.getLargestDimension()
 
@@ -383,7 +383,9 @@ class ChochinCanvas(QGLWidget):
         if "t" in self.object_types:
             pos, attrs = np.array(self.objects["t"][0]), self.objects["t"][1]
             pos *= 0.5*self.port_size*self.scale
+            pos[:, 1] *= -1
             pos[:, [0, 1]] += 0.5*self.port_size
+
             for i in range(len(pos)):
                 painter.setPen(QtGui.QColor(*(attrs["@"][i])))
                 painter.setPen(QtCore.Qt.black)
@@ -409,9 +411,8 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_antialias', 1)
             self.objects["c"].draw()
 
-
     def configureGL(self):
-        gl.glClearColor(1, 1, 1, 1)
+        gl.glClearColor(0.5, 0.5, 0.5, 1)
         gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
