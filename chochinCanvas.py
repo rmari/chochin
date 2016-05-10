@@ -52,7 +52,7 @@ class ChochinCanvas(QGLWidget):
         self.reset_rotation = np.zeros((3, 3))
         self.reset_rotation[0, 0] = 1
         self.reset_rotation[1, 2] = 1
-        self.reset_rotation[2, 1] = -1
+        self.reset_rotation[2, 1] = 1
         self.rotation = self.reset_rotation[:]
         self.scale = 1./self.scene.getLargestDimension()
 

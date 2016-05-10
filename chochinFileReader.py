@@ -54,60 +54,83 @@ class chochinFileReader:
         self.last_thickness = 0
         self.eof = False
 
-    def get_layer_array(self, in_raw_data, cmd):
-        lswitch = cmd == 'y'
-        layer_switches = np.empty(np.count_nonzero(lswitch)+2, dtype=np.int)
+    def get_layer_array(self):
+        self.lswitch = self.cmd == 'y'
+        layer_switches = np.empty(np.count_nonzero(self.lswitch)+2,
+                                  dtype=np.int)
         layer_switches[0] = 0
-        layer_switches[1:-1] = np.nonzero(lswitch)[0]
-        layer_switches[-1] = len(cmd)
-        layers = np.empty(len(layer_switches)-1, dtype=np.uint8)
-        layers[0] = self.last_layer
-        layers[1:] = np.genfromtxt(in_raw_data[layer_switches[1:-1]],
-                                   usecols=1, dtype=np.uint8)
-        layers = np.repeat(layers, np.diff(layer_switches))
-        self.last_layer = layers[-1]
-        return layers, lswitch
+        layer_switches[1:-1] = np.nonzero(self.lswitch)[0]
+        layer_switches[-1] = self.cmd.shape[0]
+        self.layers = np.empty(layer_switches.shape[0]-1, dtype=np.uint8)
+        self.layers[0] = self.last_layer
+        self.layers[1:] = np.genfromtxt(self.in_raw_data[layer_switches[1:-1]],
+                                        usecols=1, dtype=np.uint8)
+        self.layers = np.repeat(self.layers, np.diff(layer_switches))
+        self.last_layer = self.layers[-1]
 
-    def get_thickness_array(self, in_raw_data, cmd):
-        tswitch = cmd == 'r'
+    def get_thickness_array(self):
+        self.tswitch = self.cmd == 'r'
         thickness_switches =\
-            np.empty(np.count_nonzero(tswitch)+2, dtype=np.int)
+            np.empty(np.count_nonzero(self.tswitch)+2,
+                     dtype=np.int)
         thickness_switches[0] = 0
-        thickness_switches[1:-1] = np.nonzero(tswitch)[0]
-        thickness_switches[-1] = len(cmd)
-        thicknesses = np.empty(len(thickness_switches)-1, dtype=np.float32)
-        thicknesses[0] = self.last_thickness
-        thicknesses[1:] = np.genfromtxt(in_raw_data[thickness_switches[1:-1]],
-                                        usecols=1, dtype=np.float32)
-        thicknesses = np.repeat(thicknesses, np.diff(thickness_switches))
-        self.last_thickness = thicknesses[-1]
-        return thicknesses, tswitch
+        thickness_switches[1:-1] = np.nonzero(self.tswitch)[0]
+        thickness_switches[-1] = self.cmd.shape[0]
+        self.thicknesses = np.empty(thickness_switches.shape[0]-1,
+                                    dtype=np.float32)
+        self.thicknesses[0] = self.last_thickness
+        self.thicknesses[1:] =\
+            np.genfromtxt(self.in_raw_data[thickness_switches[1:-1]],
+                          usecols=1, dtype=np.float32)
+        self.thicknesses = np.repeat(self.thicknesses,
+                                     np.diff(thickness_switches))
+        self.last_thickness = self.thicknesses[-1]
 
-    def get_color_array(self, in_raw_data, cmd):
-        cswitch = cmd == '@'
-        color_switches = np.empty(np.count_nonzero(cswitch)+2, dtype=np.int)
+    def get_color_array(self):
+        self.cswitch = self.cmd == '@'
+        color_switches = np.empty(np.count_nonzero(self.cswitch)+2,
+                                  dtype=np.int)
         color_switches[0] = 0
-        color_switches[1:-1] = np.nonzero(cswitch)[0]
-        color_switches[-1] = len(cmd)
-        colors = np.empty((len(color_switches)-1, 4), dtype=np.float32)
-        colors[0] = self.last_color
-        colors[1:] =\
-            color_palette[np.genfromtxt(in_raw_data[color_switches[1:-1]],
+        color_switches[1:-1] = np.nonzero(self.cswitch)[0]
+        color_switches[-1] = self.cmd.shape[0]
+        self.colors = np.empty((color_switches.shape[0]-1, 4),
+                               dtype=np.float32)
+        self.colors[0] = self.last_color
+        self.colors[1:] =\
+            color_palette[np.genfromtxt(self.in_raw_data[color_switches[1:-1]],
                                         usecols=1, dtype=np.int)]
-        colors = np.repeat(colors, np.diff(color_switches), axis=0)
+        self.colors = np.repeat(self.colors, np.diff(color_switches), axis=0)
 
-        return colors, cswitch
+    def pruneSwitches(self):
+        n = self.in_raw_data.shape[0]
+        attribute_idx = np.zeros(n, dtype=np.bool)
+        attribute_idx[self.cswitch] = True
+        attribute_idx[self.lswitch] = True
+        attribute_idx[self.tswitch] = True
+
+        not_attribute_idx = np.logical_not(attribute_idx)
+        self.in_raw_data = self.in_raw_data[not_attribute_idx]
+        self.cmd = self.cmd[not_attribute_idx]
+        self.layers = self.layers[not_attribute_idx]
+        self.thicknesses = self.thicknesses[not_attribute_idx]
+        self.colors = self.colors[not_attribute_idx]
+        # correct the framebreak locations accordingly
+        # by counting every attribute change between
+        # every successive framebreaks
+        self.framebreaks -=\
+            np.cumsum(np.histogram(np.nonzero(attribute_idx)[0],
+                                   np.append(0, self.framebreaks))[0])
 
     def read_chunk(self):
 
         if len(self.trailing_frame) > 0:
-            in_raw_data =\
+            self.in_raw_data =\
                 np.append(self.trailing_frame,
                           np.array(self.infile.readlines()))
         else:
-            in_raw_data = np.array(self.infile.readlines())
+            self.in_raw_data = np.array(self.infile.readlines())
         # check eof
-        if in_raw_data.shape[0] == 0:
+        if self.in_raw_data.shape[0] == 0:
             return False
 
         # ensure we have at least one frame
@@ -118,22 +141,22 @@ class chochinFileReader:
         #     in_raw_data = np.vstack((in_raw_data, b))
 
         # framebreaks are lines with carriage return
-        framebreaks = in_raw_data == b'\n'
+        self.framebreaks = self.in_raw_data == b'\n'
 
         # remove the framebreaks lines in the raw data,
         # and keep a correct count of the break locations
-        in_raw_data = in_raw_data[np.logical_not(framebreaks)]
-        framebreaks = np.nonzero(framebreaks)[0]
-        framebreaks -= np.arange(len(framebreaks))
+        self.in_raw_data = self.in_raw_data[np.logical_not(self.framebreaks)]
+        self.framebreaks = np.nonzero(self.framebreaks)[0]
+        self.framebreaks -= np.arange(self.framebreaks.shape[0])
 
         # keep the bit after the last framebreak for next time,
         # as it is an incomplete frame
-        in_raw_data, self.trailing_frame =\
-            np.split(in_raw_data, framebreaks[[-1]])
-        framebreaks = framebreaks[:-1]
+        self.trailing_frame = self.in_raw_data[self.framebreaks[-1]:]
+        self.in_raw_data = self.in_raw_data[:self.framebreaks[-1]]
+        self.framebreaks = self.framebreaks[:-1]
 
         # these are the commands, 'y', 'r', 'c', etc
-        cmd = np.genfromtxt(in_raw_data, usecols=0, dtype=np.str)
+        self.cmd = np.genfromtxt(self.in_raw_data, usecols=0, dtype=np.str)
 
         # now we want to propagate any attribute definition
         # like color, layer and thickness to the underneath commands,
@@ -142,145 +165,90 @@ class chochinFileReader:
         # start with layer changes: we want to get an array 'layers',
         # with the same size as 'cmd', containing the layer
         # associated with every single line
-        layers, lswitch = self.get_layer_array(in_raw_data, cmd)
+        self.get_layer_array()
 
         # same for thicknesses
-        thicknesses, tswitch = self.get_thickness_array(in_raw_data, cmd)
+        self.get_thickness_array()
 
         # same for colors
-        colors, cswitch = self.get_color_array(in_raw_data, cmd)
+        self.get_color_array()
 
         # now we will remove the attribute def lines from our arrays
-        attribute_idx = np.logical_or(lswitch, tswitch)
-        attribute_idx = np.logical_or(attribute_idx, cswitch)
-        not_attribute_idx = np.logical_not(attribute_idx)
-        in_raw_data = in_raw_data[not_attribute_idx]
-        cmd = cmd[not_attribute_idx]
-        layers = layers[not_attribute_idx]
-        thicknesses = thicknesses[not_attribute_idx]
-        colors = colors[not_attribute_idx]
-        # correct the framebreak locations accordingly
-        # by counting every attribute change between
-        # every successive framebreaks
-        framebreaks -= np.cumsum(np.histogram(np.nonzero(attribute_idx)[0],
-                                              np.append(0, framebreaks))[0])
+        self.pruneSwitches()
 
-        circles_idx = np.nonzero(cmd == 'c')[0]
-        if len(circles_idx):
-            circles_pos = np.genfromtxt(in_raw_data[circles_idx],
-                                        usecols=[1, 2, 3],
-                                        dtype=np.float32)
-            circles_pos[:, 2] = -circles_pos[:, 2]
-            circles_colors = colors[circles_idx]
-            circles_thicknesses = thicknesses[circles_idx]
-            circles_layers = layers[circles_idx]
-            cbreaks = np.digitize(framebreaks, circles_idx)
-            circles_pos = np.split(circles_pos, cbreaks)
-            circles_colors = np.split(circles_colors, cbreaks)
-            circles_thicknesses = np.split(circles_thicknesses, cbreaks)
-            circles_layers = np.split(circles_layers, cbreaks)
+        obj_pos = {}
+        obj_attrs = {}
 
-        lines_idx = np.nonzero(cmd == 'l')[0]
-        if len(lines_idx):
-            lines_pos = np.genfromtxt(in_raw_data[lines_idx],
-                                      usecols=np.arange(1, 7),
-                                      dtype=np.float32)
-            lines_pos[:, [2, 5]] = -lines_pos[:, [2, 5]]
-            lines_colors = colors[lines_idx]
-            lines_layers = layers[lines_idx]
-            lbreaks = np.digitize(framebreaks, lines_idx)
-            lines_pos = np.split(lines_pos, lbreaks)
-            lines_colors = np.split(lines_colors, lbreaks)
-            lines_layers = np.split(lines_layers, lbreaks)
+        o = "c"
+        idx = np.nonzero(self.cmd == o)[0]
+        n = idx.shape[0]
+        if n > 0:
+            obj_pos[o] = np.genfromtxt(self.in_raw_data[idx],
+                                       usecols=[1, 2, 3],
+                                       dtype=np.float32)
+            attrs = np.empty(n, [('y', np.uint8, 1),
+                                 ('@', np.float32, 4),
+                                 ('r', np.float32, 1)])
+            attrs['@'] = self.colors[idx]
+            attrs['r'] = self.thicknesses[idx]
+            attrs['y'] = self.layers[idx]
+            breaks = np.digitize(self.framebreaks, idx)
+            obj_pos[o] = np.split(obj_pos[o], breaks)
+            obj_attrs[o] = np.split(attrs, breaks)
 
-        sticks_idx = np.nonzero(cmd == 's')[0]
-        if len(sticks_idx):
-            sticks_pos = np.genfromtxt(in_raw_data[sticks_idx],
+        o = "l"
+        idx = np.nonzero(self.cmd == o)[0]
+        n = idx.shape[0]
+        if n > 0:
+            obj_pos[o] = np.genfromtxt(self.in_raw_data[idx],
                                        usecols=np.arange(1, 7),
                                        dtype=np.float32)
-            sticks_pos[:, [2, 5]] = -sticks_pos[:, [2, 5]]
-            sticks_colors = colors[sticks_idx]
-            sticks_thicknesses = thicknesses[sticks_idx]
-            sticks_layers = layers[sticks_idx]
-            sbreaks = np.digitize(framebreaks, sticks_idx)
-            sticks_pos = np.split(sticks_pos, sbreaks)
-            sticks_colors = np.split(sticks_colors, sbreaks)
-            sticks_thicknesses = np.split(sticks_thicknesses, sbreaks)
-            sticks_layers = np.split(sticks_layers, sbreaks)
+            attrs = np.empty(n, [('y', np.uint8, 1),
+                                 ('@', np.float32, 4)])
+            attrs['@'] = self.colors[idx]
+            attrs['y'] = self.layers[idx]
+            breaks = np.digitize(self.framebreaks, idx)
+            obj_pos[o] = np.split(obj_pos[o], breaks)
+            obj_attrs[o] = np.split(attrs, breaks)
 
-        polygons_idx = np.nonzero(cmd == 'p')[0]
-        if len(polygons_idx):
-            polygons_sizes = np.genfromtxt(in_raw_data[polygons_idx],
-                                           usecols=1, dtype=np.int16)
-            pos = []
-            for idx in polygons_idx:
-                pos += in_raw_data[idx].split()
-            pos = np.array(pos).reshape((-1, 3))
-            pos[:, 2] = -pos[:, 2]
-            polygons_pos = (polygons_sizes, )
-            polygons_colors = colors[polygons_idx]
-            polygons_thicknesses = thicknesses[polygons_idx]
-            polygons_layers = layers[polygons_idx]
-            pbreaks = np.digitize(framebreaks, polygons_idx)
-            polygons_sizes = np.split(polygons_sizes, pbreaks)
-            pos = np.split(pos, pbreaks)
-            polygons_pos = list(zip(polygons_sizes, pos))
-            polygons_colors = np.split(polygons_colors, pbreaks)
-            polygons_thicknesses = np.split(polygons_thicknesses, pbreaks)
-            polygons_layers = np.split(polygons_layers, pbreaks)
+        o = "s"
+        idx = np.nonzero(self.cmd == o)[0]
+        n = idx.shape[0]
+        if n > 0:
+            obj_pos[o] = np.genfromtxt(self.in_raw_data[idx],
+                                       usecols=np.arange(1, 7),
+                                       dtype=np.float32)
+            attrs = np.empty(n, [('y', np.uint8, 1),
+                                 ('@', np.float32, 4),
+                                 ('r', np.float32, 1)])
+            attrs['@'] = self.colors[idx]
+            attrs['r'] = self.thicknesses[idx]
+            attrs['y'] = self.layers[idx]
+            breaks = np.digitize(self.framebreaks, idx)
+            obj_pos[o] = np.split(obj_pos[o], breaks)
+            obj_attrs[o] = np.split(attrs, breaks)
 
-        texts_idx = np.nonzero(cmd == 't')[0]
-        if len(texts_idx):
-            texts_str =\
+        o = "t"
+        idx = np.nonzero(self.cmd == o)[0]
+        n = idx.shape[0]
+        if n > 0:
+            obj_pos[o] = np.genfromtxt(self.in_raw_data[idx],
+                                       usecols=[1, 2, 3], dtype=np.float32)
+            attrs = np.empty(n, [('y', np.uint8, 1),
+                                 ('@', np.float32, 4),
+                                 ('s', np.str, 1)])
+            attrs['s'] =\
                 np.array([t[-1].decode().strip("\n") for t in
-                          charray.split(in_raw_data[texts_idx], maxsplit=4)])
-            texts_pos = np.genfromtxt(in_raw_data[texts_idx],
-                                      usecols=[1, 2, 3], dtype=np.float32)
-            texts_pos[:, 2] = -texts_pos[:, 2]
-            texts_colors = colors[texts_idx]
-            texts_layers = layers[texts_idx]
-            tbreaks = np.digitize(framebreaks, texts_idx)
-            texts_pos = np.split(texts_pos, tbreaks)
-            texts_str = np.split(texts_str, tbreaks)
-            texts_colors = np.split(texts_colors, tbreaks)
-            texts_layers = np.split(texts_layers, tbreaks)
+                          charray.split(self.in_raw_data[idx], maxsplit=4)])
+            attrs['@'] = self.colors[idx]
+            attrs['y'] = self.layers[idx]
+            breaks = np.digitize(self.framebreaks, idx)
+            obj_pos[o] = np.split(obj_pos[o], breaks)
+            obj_attrs[o] = np.split(attrs, breaks)
 
-        for i in range(len(framebreaks)+1):
-            obj_vals = dict()
-            obj_attrs = dict()
-            o = 'c'
-            if len(circles_idx) and len(circles_pos[i]):
-                obj_vals[o] = circles_pos[i]
-                obj_attrs[o] = {'y': circles_layers[i],
-                                '@': circles_colors[i],
-                                'r': circles_thicknesses[i]}
-
-            o = 's'
-            if len(sticks_idx) and len(sticks_pos[i]):
-                obj_vals[o] = sticks_pos[i]
-                obj_attrs[o] = {'y': sticks_layers[i],
-                                '@': sticks_colors[i],
-                                'r': sticks_thicknesses[i]}
-            o = 'l'
-            if len(lines_idx) and len(lines_pos[i]):
-                obj_vals[o] = lines_pos[i]
-                obj_attrs[o] = {'y': lines_layers[i],
-                                '@': lines_colors[i]}
-
-            o = 'p'
-            if len(polygons_idx) and len(polygons_pos[i]):
-                obj_vals[o] = polygons_pos[i]
-                obj_attrs[o] = {'y': polygons_layers[i],
-                                '@': polygons_colors[i],
-                                'r': polygons_thicknesses[i]}
-
-            o = 't'
-            if len(texts_idx) and len(texts_pos[i]):
-                obj_vals[o] = texts_pos[i]
-                obj_attrs[o] = {'y': texts_layers[i],
-                                '@': texts_colors[i],
-                                's': texts_str[i]}
-
-            self.frames.append([obj_vals, obj_attrs])
+        for i in range(len(self.framebreaks)+1):
+            pos_d = {k: obj_pos[k][i] for k in obj_pos}
+            attrs_d = {k: obj_attrs[k][i] for k in obj_attrs}
+            self.frames.append((pos_d, attrs_d))
         self.is_init = False
         return True

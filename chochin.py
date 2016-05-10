@@ -121,6 +121,7 @@ if __name__ == '__main__':
         def keyPressEvent(self, event):
             e = event.key()
             if e == QtCore.Qt.Key_Q:
+                self.datawidget.close()
                 self.close()
             elif e == QtCore.Qt.Key_V:
                 self.verbosity = not self.verbosity

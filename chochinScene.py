@@ -87,9 +87,7 @@ class chochinScene:
         if len(displayed_idx) > 0:
             # print(displayed_idx, obj_attrs)
             displayed_pos = obj_pos[displayed_idx]
-            displayed_attrs = {}
-            for k in obj_attrs:
-                displayed_attrs[k] = obj_attrs[k][displayed_idx]
+            displayed_attrs = obj_attrs[displayed_idx]
 
             #  rotate the scene
             displayed_pos = self.rotate(displayed_pos)
