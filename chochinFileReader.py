@@ -236,7 +236,7 @@ class chochinFileReader:
                                        usecols=[1, 2, 3], dtype=np.float32)
             attrs = np.empty(n, [('y', np.uint8, 1),
                                  ('@', np.float32, 4),
-                                 ('s', np.str, 1)])
+                                 ('s', ('U', 100))])
             attrs['s'] =\
                 np.array([t[-1].decode().strip("\n") for t in
                           charray.split(self.in_raw_data[idx], maxsplit=4)])
