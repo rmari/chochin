@@ -59,8 +59,10 @@ class ChochinCanvas(QGLWidget):
         self.setSceneGeometry()
 
     def setFile(self, filename):
+        print("[chochin] Set file")
         self.data = cFile.chochinFileReader(filename)
         self.data.read_chunk()
+        print("[chochin] File loaded")
         self.scene = cScene.chochinScene(*self.data.frames[self.frame])
         self.setInitSceneGeometry()
         self.loadScene()
@@ -216,21 +218,21 @@ class ChochinCanvas(QGLWidget):
         elif e == QtCore.Qt.Key_Up:
             if m != QtCore.Qt.ShiftModifier:
                 try:
-                    angleX = -np.deg2rad(float(self.prefactor))
-                except ValueError:
-                    angleX = -0.1
-            else:
-                angleX = -0.5*np.pi
-            self.setXRotation(angleX)
-            caught = True
-        elif e == QtCore.Qt.Key_Down:
-            if m != QtCore.Qt.ShiftModifier:
-                try:
                     angleX = np.deg2rad(float(self.prefactor))
                 except ValueError:
                     angleX = 0.1
             else:
                 angleX = 0.5*np.pi
+            self.setXRotation(angleX)
+            caught = True
+        elif e == QtCore.Qt.Key_Down:
+            if m != QtCore.Qt.ShiftModifier:
+                try:
+                    angleX = -np.deg2rad(float(self.prefactor))
+                except ValueError:
+                    angleX = -0.1
+            else:
+                angleX = -0.5*np.pi
             self.setXRotation(angleX)
             caught = True
         elif e == QtCore.Qt.Key_Left:
@@ -456,6 +458,18 @@ class ChochinCanvas(QGLWidget):
         # p.end()
 
     def setPortSize(self, size):
+        try:
+            inflate = size/self.port_size
+            self.offset[0] *= inflate
+            self.offset[1] *= inflate
+
+            self.offset[0] += self.width*(1-inflate)/2
+            self.offset[1] += self.height*(1-inflate)/2
+            self.offset[0] = int(self.offset[0])
+            self.offset[1] = int(self.offset[1])
+        except AttributeError:   # for init time
+            pass
+
         self.port_size = int(size)
         self.rad_scale = self.port_size
 
