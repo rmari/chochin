@@ -360,7 +360,7 @@ class ChochinCanvas(QGLWidget):
             self.setYRotation(angleY)
 
             angleX = self.current_point.y() - self.previous_point.y()
-            angleX *= 4/self.height
+            angleX *= -4/self.height
             self.setXRotation(angleX)
             self.loadScene()
 
