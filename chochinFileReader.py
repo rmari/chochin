@@ -18,6 +18,7 @@
 import sys
 import os
 import numpy as np
+import pandas as pd
 from PyQt4 import QtCore, QtGui
 import numpy.core.defchararray as charray
 
@@ -27,14 +28,26 @@ if os.path.isfile(color_fname):
     import chochin_palette
     color_palette = np.array(chochin_palette.color_palette, dtype=np.object)
 else:
-    color_palette = np.array([QtCore.Qt.black, QtCore.Qt.gray, QtCore.Qt.white,
-                              QtCore.Qt.green, QtCore.Qt.yellow, QtCore.Qt.red,
-                              QtCore.Qt.blue, QtCore.Qt.magenta,
-                              QtCore.Qt.darkGreen, QtCore.Qt.cyan,
-                              QtCore.Qt.gray, QtCore.Qt.white, QtCore.Qt.green,
-                              QtCore.Qt.yellow, QtCore.Qt.red, QtCore.Qt.blue,
-                              QtCore.Qt.magenta, QtCore.Qt.darkGreen,
-                              QtCore.Qt.cyan], dtype=np.object)
+    color_palette = np.array([QtCore.Qt.black,
+                              QtCore.Qt.gray,
+                              QtCore.Qt.white,
+                              QtCore.Qt.green,
+                              QtCore.Qt.yellow,
+                              QtCore.Qt.red,
+                              QtCore.Qt.blue,
+                              QtCore.Qt.magenta,
+                              QtCore.Qt.darkGreen,
+                              QtCore.Qt.cyan,
+                              QtCore.Qt.gray,
+                              QtCore.Qt.white,
+                              QtCore.Qt.green,
+                              QtCore.Qt.yellow,
+                              QtCore.Qt.red,
+                              QtCore.Qt.blue,
+                              QtCore.Qt.magenta,
+                              QtCore.Qt.darkGreen,
+                              QtCore.Qt.cyan],
+                             dtype=np.object)
 
 color_palette = np.array([QtGui.QColor(c).getRgbF() for c in color_palette])
 
@@ -132,6 +145,7 @@ class chochinFileReader:
         # check eof
         if self.in_raw_data.shape[0] == 0:
             return False
+        print("[chochin] Raw data loaded")
 
         # ensure we have at least one frame
         # while not np.any(in_raw_data == b'\n'):
@@ -151,12 +165,16 @@ class chochinFileReader:
 
         # keep the bit after the last framebreak for next time,
         # as it is an incomplete frame
-        self.trailing_frame = self.in_raw_data[self.framebreaks[-1]:]
-        self.in_raw_data = self.in_raw_data[:self.framebreaks[-1]]
-        self.framebreaks = self.framebreaks[:-1]
+        if self.framebreaks.shape[0] > 0:
+            self.trailing_frame = self.in_raw_data[self.framebreaks[-1]:]
+            self.in_raw_data = self.in_raw_data[:self.framebreaks[-1]]
+            self.framebreaks = self.framebreaks[:-1]
+
+        print("[chochin] Framebreaks parsed")
 
         # these are the commands, 'y', 'r', 'c', etc
         self.cmd = np.genfromtxt(self.in_raw_data, usecols=0, dtype=np.str)
+        # self.cmd = pd.read_table(self.in_raw_data, usecols=0, dtype=np.str)
 
         # now we want to propagate any attribute definition
         # like color, layer and thickness to the underneath commands,
@@ -175,6 +193,8 @@ class chochinFileReader:
 
         # now we will remove the attribute def lines from our arrays
         self.pruneSwitches()
+
+        print("[chochin] Switch commands parsed")
 
         obj_pos = {}
         obj_attrs = {}
@@ -245,6 +265,8 @@ class chochinFileReader:
             breaks = np.digitize(self.framebreaks, idx)
             obj_pos[o] = np.split(obj_pos[o], breaks)
             obj_attrs[o] = np.split(attrs, breaks)
+
+        print("[chochin] Object commands parsed")
 
         for i in range(len(self.framebreaks)+1):
             pos_d = {k: obj_pos[k][i] for k in obj_pos}
