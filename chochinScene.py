@@ -73,7 +73,7 @@ class chochinScene:
             rotated_pos = np.hstack((np.dot(positions[:, :3], self.rotation),
                                      np.dot(positions[:, 3:6], self.rotation)))
         self.rotated = True
-        return rotated_pos
+        return np.array(rotated_pos)  # dot sometimes returns a matrix!!! grrr
 
     def pushAway(self, positions, dist):
         positions[:, 2] += dist

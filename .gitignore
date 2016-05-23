@@ -1,4 +1,7 @@
 *.dat
 __pycache__
-y_D2N100walls_params_stress1r_wtest1.dat~
-D3N16000VF0.59Bidi1.40.5LyLx2.0LzLx1.0walls.yap
+*~
+*.yap
+build/
+chochinFile.cpp
+chochinFile.*.so

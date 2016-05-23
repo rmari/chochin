@@ -24,7 +24,7 @@ from PyQt4.QtOpenGL import QGLWidget
 # PyOpenGL imports
 import OpenGL.GL as gl
 import chochinPrimitives as cPrim
-import chochinFileReader as cFile
+import chochinFile as cFile
 import chochinScene as cScene
 
 
@@ -60,7 +60,7 @@ class ChochinCanvas(QGLWidget):
 
     def setFile(self, filename):
         print("[chochin] Set file")
-        self.data = cFile.chochinFileReader(filename)
+        self.data = cFile.chochinFile(filename.encode("utf8"))
         self.data.read_chunk()
         print("[chochin] File loaded")
         self.scene = cScene.chochinScene(*self.data.frames[self.frame])
