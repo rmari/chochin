@@ -45,8 +45,8 @@ color_palette = np.array([QtGui.QColor(c).getRgbF() for c in color_palette])
 cdef extern from "filereader.cpp":
     cdef cppclass filereader:
           filereader(string) except +
-          map[string, vector[vector[double]]] positions
-          map[string, vector[double]] thicknesses
+          map[string, vector[vector[float]]] positions
+          map[string, vector[float]] thicknesses
           map[string, vector[int]] colors
           map[string, vector[int]] layers
           map[string, vector[string]] texts
@@ -71,7 +71,7 @@ cdef class chochinFile:
         n = self.size(obj_type)
         if n == 0:
             return None
-        return np.array(self.thisptr.positions[obj_str], dtype=np.float32)
+        return np.array(self.thisptr.positions[obj_str])
 
     def get_attrs(self, obj_type):
         obj_str = obj_type.encode("utf8")

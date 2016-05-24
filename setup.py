@@ -1,13 +1,13 @@
 # Cython compile instructions
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from Cython.Build import cythonize
 
-# Use python setup.py build --inplace
-# to compile
+chochinFile_module = Extension('chochinFile',
+                               sources=['chochinFile.pyx'],
+                               language="c++",
+                               extra_compile_args=["-std=c++11"])
 
 setup(
-  name="chochinFile",
-  ext_modules=cythonize('*.pyx'),
-  # extra_compile_args=["-std=c++11"]
+  ext_modules=cythonize(chochinFile_module),
 )

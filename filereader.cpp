@@ -10,11 +10,11 @@ private:
   std::ifstream in_file;
   int layer;
   int color;
-  double thickness;
+  float thickness;
 
 public:
-  std::map <std::string, std::vector < std::vector < double > > > positions;
-  std::map <std::string, std::vector < double > > thicknesses;
+  std::map <std::string, std::vector < std::vector < float > > > positions;
+  std::map <std::string, std::vector < float > > thicknesses;
   std::map <std::string, std::vector < int > > colors;
   std::map <std::string, std::vector < int > > layers;
   std::map <std::string, std::vector < std::string > > texts;
@@ -26,8 +26,8 @@ public:
     in_file.close();
   };
 
-  std::vector<double> fetch(std::istringstream &sline, unsigned int size){
-    std::vector < double > read_vec (size);
+  std::vector<float> fetch(std::istringstream &sline, unsigned int size){
+    std::vector < float > read_vec (size);
     for(unsigned int i=0; i<size; i++){
       sline >> read_vec[i];
     }
