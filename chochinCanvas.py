@@ -63,12 +63,12 @@ class ChochinCanvas(QGLWidget):
         self.data = cFile.chochinFile(filename.encode("utf8"))
         self.data.read_chunk()
         print("[chochin] File loaded")
-        self.scene = cScene.chochinScene(*self.data.frames[self.frame])
+        self.scene = cScene.chochinScene(*self.data[self.frame])
         self.setInitSceneGeometry()
         self.loadScene()
 
     def loadScene(self):
-        self.scene = cScene.chochinScene(*self.data.frames[self.frame])
+        self.scene = cScene.chochinScene(*self.data[self.frame])
         self.setSceneGeometry()
 
         pos, attrs = self.scene.getDisplayedScene()
@@ -120,7 +120,7 @@ class ChochinCanvas(QGLWidget):
         self.parent().timer.start(self.speed, self.parent())
 
     def goToFrame(self, n):
-        frame_nb = len(self.data.frames)
+        frame_nb = self.data.frame_nb()
         if n > frame_nb - 1:
             self.frame = frame_nb - 1
         elif n < 0:
