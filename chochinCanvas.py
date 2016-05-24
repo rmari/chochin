@@ -79,20 +79,23 @@ class ChochinCanvas(QGLWidget):
         if "s" in pos:
             self.objects["s"].set_data(pos["s"],
                                        attrs["s"]["r"],
-                                       attrs["s"]["@"])
+                                       attrs["s"]["@"],
+                                       attrs["s"]["y"])
             self.object_types.append("s")
 
         # lines
         if "l" in pos:
             self.objects["l"].set_data(pos["l"],
-                                       attrs["l"]["@"])
+                                       attrs["l"]["@"],
+                                       attrs["l"]["y"])
             self.object_types.append("l")
 
         # circles
         if "c" in pos:
             self.objects["c"].set_data(pos["c"],
                                        attrs["c"]["r"],
-                                       attrs["c"]["@"])
+                                       attrs["c"]["@"],
+                                       attrs["c"]["y"])
             self.object_types.append("c")
 
         # texts
@@ -401,9 +404,12 @@ class ChochinCanvas(QGLWidget):
         # clear the buffer
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
+        push_vector = [0, 0, self.scene.getLargestDimension()/2.]
         for t in ["s", "l"]:
             if t in self.object_types:
                 self.objects[t].set_uniform('u_scale', self.scale)
+                self.objects[t].set_uniform('u_push', push_vector)
+                self.objects[t].set_uniform('u_active_layers', self.layer_activity)
                 self.objects[t].draw()
 
         if "c" in self.object_types:
@@ -411,6 +417,10 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_rad_scale', self.rad_scale)
             self.objects["c"].set_uniform('u_linewidth', 1)
             self.objects["c"].set_uniform('u_antialias', 1)
+            self.objects["c"].set_uniform('u_rotation',
+                                          np.array(self.rotation, dtype=np.float32))
+            self.objects["c"].set_uniform('u_push', push_vector)
+            self.objects["c"].set_uniform('u_active_layers', self.layer_activity)
             self.objects["c"].draw()
 
     def configureGL(self):

@@ -49,8 +49,11 @@ class chochinScene:
 
     def getLargestDimension(self):
         boundaries = self.getBoundaries()
-        return np.max(boundaries[:, 1] - boundaries[:, 0])
-
+        if boundaries[0, 0] is not None:
+            return np.max(boundaries[:, 1] - boundaries[:, 0])
+        else:
+            return 0
+            
     def filterLayers(self, layer_mask, object_layer_attr):
         #  filter out layers
         active_layers = np.nonzero(layer_mask)[0]
@@ -75,36 +78,19 @@ class chochinScene:
         self.rotated = True
         return np.array(rotated_pos)  # dot sometimes returns a matrix!!! grrr
 
-    def pushAway(self, positions, dist):
-        positions[:, 2] += dist
-        if positions.shape[1] == 6:
-            positions[:, 5] += dist
-        return positions
-
-    def processObject(self, obj_pos, obj_attrs):
-        #  filter out layers
-        displayed_idx = self.filterLayers(self.layer_list, obj_attrs['y'])
-        if len(displayed_idx) > 0:
-            # print(displayed_idx, obj_attrs)
-            displayed_pos = obj_pos[displayed_idx]
-            displayed_attrs = obj_attrs[displayed_idx]
-
-            #  rotate the scene
-            displayed_pos = self.rotate(displayed_pos)
-            displayed_pos = self.pushAway(displayed_pos,
-                                          self.getLargestDimension()/2.)
-
-            return displayed_pos, displayed_attrs
-        else:
-            return None, None
-
     def getDisplayedScene(self):
         displayed_pos = {}
         displayed_attrs = {}
         for k in self.obj_vals:
-            displayed_pos[k], displayed_attrs[k] =\
-                self.processObject(self.obj_vals[k], self.obj_attrs[k])
-            if displayed_pos[k] is None:
-                del displayed_pos[k]
+            if k != "c":
+                displayed_idx = self.filterLayers(self.layer_list,
+                                                  self.obj_attrs[k]['y'])
+                if len(displayed_idx) > 0:
+                    displayed_pos[k] =\
+                        self.rotate(self.obj_vals[k][displayed_idx])
+                displayed_attrs[k] = self.obj_attrs[k][displayed_idx]
+            else:
+                displayed_pos[k] = self.obj_vals[k]
+                displayed_attrs[k] = self.obj_attrs[k]
 
         return displayed_pos, displayed_attrs

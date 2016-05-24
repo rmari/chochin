@@ -37,23 +37,50 @@ def make_shader_program(vertex_source, fragment_source):
     return link_shader(vs, fs)
 
 
+def parse_array_size(src_line):
+    lbracket = src_line.find("[")
+    if lbracket == -1:
+        return src_line, 1
+    else:
+        return src_line[:lbracket], src_line[lbracket+1:src_line.find("]")]
+
+
 def parse_shader(source):
     in_var = {'attribute': [],
               'varying': [],
               'uniform': []}
 
     for line in source.splitlines():
-        lsplit = (line.split(";"))[0].split()
+        lsplit = (line.split(";"))[0]
+        lsplit, array_size = parse_array_size(lsplit)
+        lsplit = lsplit.split()
         if len(lsplit) > 0 and lsplit[0] in in_var:
-            in_var[lsplit[0]].append(lsplit[1:])
+            in_var[lsplit[0]].append((*lsplit[1:], int(array_size)))
     return in_var
 
 
-def var_size(v):
+def attribute_size(v):
     if v == 'float':
-        return 1
+        return 1, gl.GL_FLOAT
     if v[:3] == 'vec':
-        return int(v[3])
+        return int(v[3]), gl.GL_FLOAT
+    if v == 'int':
+        return 1, gl.GL_INT
+
+
+def uniform_setter(utype, uname, usize):
+    if usize > 1:
+        if utype == 'float':
+            return lambda loc, val: gl.glUniform1fv(loc, usize, val)
+    else:
+        if utype == 'float':
+            return lambda loc, val: gl.glUniform1f(loc, val)
+        if utype[:3] == 'vec':
+            return lambda loc, val: gl.glUniform3fv(loc, 1, val)
+        if utype[:3] == 'mat':
+            return lambda loc, val: gl.glUniformMatrix3fv(loc, 1,
+                                                          gl.GL_FALSE, val)
+    raise RuntimeError("cannot treat uniform ", utype, uname)
 
 
 class ChochinPrimitiveArray:
@@ -63,8 +90,9 @@ class ChochinPrimitiveArray:
 
         self.attributes_loc = {}
         self.attributes_size = {}
+        self.attributes_type = {}
         self.uniforms_loc = {}
-        self.uniforms_size = {}
+        self.uniforms_setters = {}
         self.uniforms_val = {}
         self.parse_shader_var(vertex_code, fragment_code)
         self.gl_primitive = gl_primitive
@@ -74,17 +102,18 @@ class ChochinPrimitiveArray:
     def parse_shader_var(self, vertex_code, fragment_code):
         in_var = parse_shader(vertex_code + fragment_code)
         for a in in_var['attribute']:
-            a_type, a_name = a
+            a_type, a_name, a_size = a
             self.attributes_loc[a_name] =\
                 gl.glGetAttribLocation(self.shaders_program, a_name)
-            self.attributes_size[a_name] = var_size(a_type)
+            self.attributes_size[a_name],\
+                self.attributes_type[a_name] = attribute_size(a_type)
         self.attribute_stride = 4*sum(self.attributes_size.values())
 
         for u in in_var['uniform']:
-            u_type, u_name = u
+            u_type, u_name, u_size = u
             self.uniforms_loc[u_name] =\
                 gl.glGetUniformLocation(self.shaders_program, u_name)
-            self.uniforms_size[u_name] = var_size(u_type)
+            self.uniforms_setters[u_name] = uniform_setter(u_type, u_name, u_size)
 
     def set_vbo(self, data):
         self.vbo = glvbo.VBO(data, usage='GL_STREAM_DRAW_ARB')
@@ -102,7 +131,7 @@ class ChochinPrimitiveArray:
         for a in self.attributes:
             gl.glVertexAttribPointer(self.attributes_loc[a],
                                      self.attributes_size[a],
-                                     gl.GL_FLOAT,
+                                     self.attributes_type[a],
                                      gl.GL_FALSE,
                                      self.attribute_stride,
                                      self.vbo + offset)
@@ -110,9 +139,7 @@ class ChochinPrimitiveArray:
 
         gl.glUseProgram(self.shaders_program)
         for u in self.uniforms_loc:
-            if self.uniforms_size[u] != 1:
-                raise RuntimeError("only float uniforms are implemented")
-            gl.glUniform1f(self.uniforms_loc[u], self.uniforms_val[u])
+            self.uniforms_setters[u](self.uniforms_loc[u], self.uniforms_val[u])
 
         gl.glDrawArrays(self.gl_primitive, 0, len(self.vbo.data))
         self.vbo.unbind()
@@ -124,15 +151,20 @@ class Sticks(ChochinPrimitiveArray):
 
     // Uniforms
     uniform float u_scale;
+    uniform vec3 u_push;
+    uniform float u_active_layers[12];
 
     attribute vec3 a_position;
     attribute vec4 a_fg_color;
+    attribute float a_layer;
 
     varying vec4 v_fg_color;
+    varying float v_discard;
 
     void main (void) {
-        gl_Position = vec4(a_position*u_scale,1.0);
+        v_discard = u_active_layers[int(a_layer)];
         v_fg_color  = a_fg_color;
+        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
     }
     """
 
@@ -140,18 +172,21 @@ class Sticks(ChochinPrimitiveArray):
     #version 120
 
     varying vec4 v_fg_color;
+    varying float v_discard;
 
     void main()
     {
+        if (v_discard < 0.1) {
+            discard;
+        }
         gl_FragColor = v_fg_color;
     }
     """
 
     def __init__(self):
         super().__init__(self.s_vert, self.s_frag, gl.GL_TRIANGLES)
-        # self.set_uniform('u_scale', np.array([1, 1], dtype=np.float32))
 
-    def set_data(self, line_ends, thicknesses, colors):
+    def set_data(self, line_ends, thicknesses, colors, layers):
         n = line_ends.shape[0]
         normals = np.empty(shape=(n, 3))
         normals[:, 0] = np.ravel(line_ends[:, 4] - line_ends[:, 1])
@@ -167,8 +202,9 @@ class Sticks(ChochinPrimitiveArray):
         a_position[4::6] = a_position[2::6]
         a_position[5::6] = line_ends[:, 3:]-thicknesses*normals
         colors = np.repeat(colors, 6, axis=0)
-        self.set_vbo(np.hstack((a_position, colors)).astype(np.float32))
-        self.attributes = ['a_position', 'a_fg_color']
+        layers = np.repeat(layers, 6, axis=0)
+        self.set_vbo(np.column_stack((a_position, colors, layers)).astype(np.float32))
+        self.attributes = ['a_position', 'a_fg_color', 'a_layer']
 
 
 class Circles(ChochinPrimitiveArray):
@@ -181,6 +217,9 @@ class Circles(ChochinPrimitiveArray):
     uniform float u_antialias;
     uniform float u_scale;
     uniform float u_rad_scale;
+    uniform mat3 u_rotation;
+    uniform vec3 u_push;
+    uniform float u_active_layers[12];
 
     // Attributes
     // ------------------------------------
@@ -188,6 +227,7 @@ class Circles(ChochinPrimitiveArray):
     attribute vec4  a_fg_color;
     attribute vec4  a_bg_color;
     attribute float a_size;
+    attribute float a_layer;
 
     // Varyings
     // ------------------------------------
@@ -196,6 +236,7 @@ class Circles(ChochinPrimitiveArray):
     varying float v_size;
     varying float v_linewidth;
     varying float v_antialias;
+    varying float v_discard;
 
     void main (void) {
         v_size = a_size*u_rad_scale*u_scale;
@@ -203,7 +244,8 @@ class Circles(ChochinPrimitiveArray):
         v_antialias = u_antialias;
         v_fg_color  = a_fg_color;
         v_bg_color  = a_bg_color;
-        gl_Position = vec4(a_position*u_scale,1.0);
+        v_discard = u_active_layers[int(a_layer)];
+        gl_Position = vec4((u_rotation*a_position+u_push)*u_scale,1.0);
         gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
     }
     """
@@ -222,6 +264,7 @@ class Circles(ChochinPrimitiveArray):
     varying float v_size;
     varying float v_linewidth;
     varying float v_antialias;
+    varying float v_discard;
 
     // Functions
     // ------------------------------------
@@ -238,6 +281,9 @@ class Circles(ChochinPrimitiveArray):
     // ------------------------------------
     void main()
     {
+        if (v_discard < 0.1) {
+            discard;
+        }
         float size = v_size +2*(v_linewidth + 1.5*v_antialias);
         float t = v_linewidth/2.0-v_antialias;
 
@@ -270,15 +316,20 @@ class Circles(ChochinPrimitiveArray):
         # self.set_uniform('u_linewidth', np.float32(1))
         # self.set_uniform('u_scale', np.array([1, 1], dtype=np.float32))
 
-    def set_data(self, centers, radii, colors):
+    def set_data(self, centers, radii, colors, layers):
         n = centers.shape[0]
-        data_c = np.zeros((n, 12), dtype=np.float32)
+        data_c = np.zeros((n, 13), dtype=np.float32)
         data_c[:, :3] = centers
         data_c[:, 3:7] = colors
         data_c[:, 7:11] = 0, 0, 0, 1
         data_c[:, 11] = radii
+        data_c[:, 12] = layers
         self.set_vbo(data_c)
-        self.attributes = ['a_position', 'a_bg_color', 'a_fg_color', 'a_size']
+        self.attributes = ['a_position',
+                           'a_bg_color',
+                           'a_fg_color',
+                           'a_size',
+                           'a_layer']
 
 
 class Lines(ChochinPrimitiveArray):
@@ -287,17 +338,21 @@ class Lines(ChochinPrimitiveArray):
 
     // Uniforms
     uniform float u_scale;
+    uniform vec3 u_push;
+    uniform float u_active_layers[12];
 
     // Attributes
     attribute vec3  a_position;
     attribute vec4  a_fg_color;
+    attribute float a_layer;
 
-    // Varyings
     varying vec4 v_fg_color;
+    varying float v_discard;
 
     void main (void) {
+        v_discard = u_active_layers[int(a_layer)];
         v_fg_color  = a_fg_color;
-        gl_Position = vec4(a_position*u_scale,1.0);
+        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
     }
     """
 
@@ -305,9 +360,13 @@ class Lines(ChochinPrimitiveArray):
     #version 120
 
     varying vec4 v_fg_color;
+    varying float v_discard;
 
     void main()
     {
+        if (v_discard < 0.1) {
+            discard;
+        }
        gl_FragColor = v_fg_color;
     }
     """
@@ -315,8 +374,9 @@ class Lines(ChochinPrimitiveArray):
     def __init__(self):
         super().__init__(self.vert, self.frag, gl.GL_LINES)
 
-    def set_data(self, line_ends, colors):
+    def set_data(self, line_ends, colors, layers):
         line_ends = line_ends.reshape((-1, 3))
         colors = np.repeat(colors, 2, axis=0)
-        self.set_vbo(np.hstack((line_ends, colors)).astype(np.float32))
-        self.attributes = ['a_position', 'a_fg_color']
+        layers = np.repeat(layers, 2, axis=0)
+        self.set_vbo(np.column_stack((line_ends, colors, layers)).astype(np.float32))
+        self.attributes = ['a_position', 'a_fg_color', 'a_layer']
