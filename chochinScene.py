@@ -53,7 +53,7 @@ class chochinScene:
             return np.max(boundaries[:, 1] - boundaries[:, 0])
         else:
             return 0
-            
+
     def filterLayers(self, layer_mask, object_layer_attr):
         #  filter out layers
         active_layers = np.nonzero(layer_mask)[0]
@@ -83,12 +83,8 @@ class chochinScene:
         displayed_attrs = {}
         for k in self.obj_vals:
             if k != "c":
-                displayed_idx = self.filterLayers(self.layer_list,
-                                                  self.obj_attrs[k]['y'])
-                if len(displayed_idx) > 0:
-                    displayed_pos[k] =\
-                        self.rotate(self.obj_vals[k][displayed_idx])
-                displayed_attrs[k] = self.obj_attrs[k][displayed_idx]
+                displayed_pos[k] = self.rotate(self.obj_vals[k])
+                displayed_attrs[k] = self.obj_attrs[k]
             else:
                 displayed_pos[k] = self.obj_vals[k]
                 displayed_attrs[k] = self.obj_attrs[k]
