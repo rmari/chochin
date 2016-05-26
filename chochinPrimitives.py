@@ -96,8 +96,6 @@ class ChochinPrimitiveArray:
         self.uniforms_val = {}
         self.parse_shader_var(vertex_code, fragment_code)
         self.gl_primitive = gl_primitive
-        self.vbo = glvbo.VBO(np.zeros(3, dtype=np.float32),
-                             usage='GL_STREAM_DRAW_ARB')
 
     def parse_shader_var(self, vertex_code, fragment_code):
         in_var = parse_shader(vertex_code + fragment_code)
@@ -116,7 +114,7 @@ class ChochinPrimitiveArray:
             self.uniforms_setters[u_name] = uniform_setter(u_type, u_name, u_size)
 
     def set_vbo(self, data):
-        self.vbo = glvbo.VBO(data, usage='GL_STREAM_DRAW_ARB')
+        self.vbo = glvbo.VBO(data, usage='GL_STATIC_DRAW_ARB')
 
     def set_uniform(self, name, value):
         if name not in self.uniforms_loc:
