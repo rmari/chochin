@@ -111,7 +111,8 @@ class ChochinPrimitiveArray:
             u_type, u_name, u_size = u
             self.uniforms_loc[u_name] =\
                 gl.glGetUniformLocation(self.shaders_program, u_name)
-            self.uniforms_setters[u_name] = uniform_setter(u_type, u_name, u_size)
+            self.uniforms_setters[u_name] =\
+                uniform_setter(u_type, u_name, u_size)
 
     def set_vbo(self, data):
         self.vbo = glvbo.VBO(data, usage='GL_STATIC_DRAW_ARB')
@@ -137,7 +138,8 @@ class ChochinPrimitiveArray:
 
         gl.glUseProgram(self.shaders_program)
         for u in self.uniforms_loc:
-            self.uniforms_setters[u](self.uniforms_loc[u], self.uniforms_val[u])
+            self.uniforms_setters[u](self.uniforms_loc[u],
+                                     self.uniforms_val[u])
 
         gl.glDrawArrays(self.gl_primitive, 0, len(self.vbo.data))
         self.vbo.unbind()
@@ -201,11 +203,15 @@ class Sticks(ChochinPrimitiveArray):
         a_position[5::6] = line_ends[:, 3:]-thicknesses*normals
         colors = np.repeat(colors, 6, axis=0)
         layers = np.repeat(layers, 6, axis=0)
-        self.set_vbo(np.column_stack((a_position, colors, layers)).astype(np.float32))
+        vbo_data = np.column_stack((a_position,
+                                    colors,
+                                    layers)).astype(np.float32)
+        self.set_vbo(vbo_data)
         self.attributes = ['a_position', 'a_fg_color', 'a_layer']
 
 
 class Circles(ChochinPrimitiveArray):
+    # shaders credit VisPy https://github.com/vispy/vispy (cloud.py example)
     c_vert = """
     #version 120
 
@@ -376,5 +382,8 @@ class Lines(ChochinPrimitiveArray):
         line_ends = line_ends.reshape((-1, 3))
         colors = np.repeat(colors, 2, axis=0)
         layers = np.repeat(layers, 2, axis=0)
-        self.set_vbo(np.column_stack((line_ends, colors, layers)).astype(np.float32))
+        vbo_data = np.column_stack((line_ends,
+                                    colors,
+                                    layers)).astype(np.float32)
+        self.set_vbo(vbo_data)
         self.attributes = ['a_position', 'a_fg_color', 'a_layer']

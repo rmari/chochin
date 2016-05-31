@@ -15,6 +15,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
+import os
 import numpy as np
 
 # PyQt4 imports
@@ -26,6 +28,42 @@ import OpenGL.GL as gl
 import chochinPrimitives as cPrim
 import chochinFile as cFile
 import chochinScene as cScene
+
+color_fname = "chochin_palette.py"
+if os.path.isfile(color_fname):
+    sys.path.append(".")
+    import chochin_palette
+    color_palette = chochin_palette.color_palette
+else:
+    color_palette = [QtCore.Qt.black,
+                     QtCore.Qt.gray,
+                     QtCore.Qt.white,
+                     QtCore.Qt.green,
+                     QtCore.Qt.yellow,
+                     QtCore.Qt.red,
+                     QtCore.Qt.blue,
+                     QtCore.Qt.magenta,
+                     QtCore.Qt.darkGreen,
+                     QtCore.Qt.cyan,
+                     QtCore.Qt.gray,
+                     QtCore.Qt.white,
+                     QtCore.Qt.green,
+                     QtCore.Qt.yellow,
+                     QtCore.Qt.red,
+                     QtCore.Qt.blue,
+                     QtCore.Qt.magenta,
+                     QtCore.Qt.darkGreen,
+                     QtCore.Qt.cyan]
+
+p = []
+for c in color_palette:
+    try:
+        color = QtGui.QColor(c)
+    except TypeError:
+        color = QtGui.QColor(*c)
+    p.append(color.getRgbF())
+
+color_palette = np.array(p)
 
 
 class ChochinCanvas(QGLWidget):
@@ -61,7 +99,8 @@ class ChochinCanvas(QGLWidget):
     def setFile(self, filename):
         print("[chochin] Set file")
         self.data = cFile.chochinFile(filename.encode("utf8"))
-        self.data.read_chunk()
+        self.data.setPalette(color_palette)
+        self.data.readChunk()
         print("[chochin] File loaded")
         self.scene = cScene.chochinScene(*self.data[self.frame])
         self.setInitSceneGeometry()
@@ -191,7 +230,7 @@ class ChochinCanvas(QGLWidget):
             caught = True
             stop_anim = False
         elif e == QtCore.Qt.Key_G and m == QtCore.Qt.ShiftModifier:
-            self.goToFrame(len(self.data.frames) - 1)
+            self.goToFrame(self.data.frame_nb() - 1)
             caught = True
         elif e == QtCore.Qt.Key_Space:
             caught = True
@@ -372,7 +411,6 @@ class ChochinCanvas(QGLWidget):
     def initializeGL(self):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
         """
-        # background color
         self.configureGL()
 
         self.objects = {}
@@ -409,7 +447,8 @@ class ChochinCanvas(QGLWidget):
             if t in self.object_types:
                 self.objects[t].set_uniform('u_scale', self.scale)
                 self.objects[t].set_uniform('u_push', push_vector)
-                self.objects[t].set_uniform('u_active_layers', self.layer_activity)
+                self.objects[t].set_uniform('u_active_layers',
+                                            self.layer_activity)
                 self.objects[t].draw()
 
         if "c" in self.object_types:
@@ -418,13 +457,15 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_linewidth', 1)
             self.objects["c"].set_uniform('u_antialias', 1)
             self.objects["c"].set_uniform('u_rotation',
-                                          np.array(self.rotation, dtype=np.float32))
+                                          np.array(self.rotation,
+                                                   dtype=np.float32))
             self.objects["c"].set_uniform('u_push', push_vector)
-            self.objects["c"].set_uniform('u_active_layers', self.layer_activity)
+            self.objects["c"].set_uniform('u_active_layers',
+                                          self.layer_activity)
             self.objects["c"].draw()
 
     def configureGL(self):
-        gl.glClearColor(0.5, 0.5, 0.5, 1)
+        gl.glClearColor(*color_palette[1])
         gl.glEnable(gl.GL_VERTEX_PROGRAM_POINT_SIZE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)

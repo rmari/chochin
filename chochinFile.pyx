@@ -1,9 +1,6 @@
 # distutils: language = c++
 # distutils: sources = filereader.cpp
 
-import sys
-import os
-
 from libcpp.vector cimport vector
 from libcpp.map cimport map
 from libcpp.string cimport string
@@ -13,34 +10,6 @@ import numpy as np
 
 from PyQt4 import QtCore, QtGui
 
-color_fname = "chochin_palette.py"
-if os.path.isfile(color_fname):
-    sys.path.append(".")
-    import chochin_palette
-    color_palette = np.array(chochin_palette.color_palette, dtype=np.object)
-else:
-    color_palette = np.array([QtCore.Qt.black,
-                              QtCore.Qt.gray,
-                              QtCore.Qt.white,
-                              QtCore.Qt.green,
-                              QtCore.Qt.yellow,
-                              QtCore.Qt.red,
-                              QtCore.Qt.blue,
-                              QtCore.Qt.magenta,
-                              QtCore.Qt.darkGreen,
-                              QtCore.Qt.cyan,
-                              QtCore.Qt.gray,
-                              QtCore.Qt.white,
-                              QtCore.Qt.green,
-                              QtCore.Qt.yellow,
-                              QtCore.Qt.red,
-                              QtCore.Qt.blue,
-                              QtCore.Qt.magenta,
-                              QtCore.Qt.darkGreen,
-                              QtCore.Qt.cyan],
-                             dtype=np.object)
-
-color_palette = np.array([QtGui.QColor(c).getRgbF() for c in color_palette])
 
 cdef extern from "filereader.cpp":
   cdef struct Frame:
@@ -58,16 +27,19 @@ cdef extern from "filereader.cpp":
 
 cdef class chochinFile:
     cdef filereader *thisptr      # hold a C++ instance which we're wrapping
-
+    cdef color_palette
     def __cinit__(self, string fname):
         self.thisptr = new filereader(fname)
 
     def __dealloc__(self):
         del self.thisptr
 
-    def read_chunk(self):
+    def readChunk(self):
         while self.thisptr.get():
             pass
+
+    def setPalette(self, palette):
+        self.color_palette = palette
 
     def get_attrs(self, index):
         frame_data = self.thisptr.frames[index]
@@ -80,21 +52,21 @@ cdef class chochinFile:
                                             ('@', np.float32, 4),
                                             ('r', np.float32, 1)])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
                 attrs[o_str]['r'] = frame_data.thicknesses[o]
             elif o == b"l":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
                                         ('@', np.float32, 4)])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
             elif o == b"t":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
                                         ('@', np.float32, 4),
                                         ('s', ('U', 100))])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
                 attrs[o_str]['s'] = frame_data.texts[o]
 
         return attrs
