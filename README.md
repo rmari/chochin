@@ -16,7 +16,7 @@ It is possible, to rotate, translate, zoom in and out, select layers to display,
 
 <h2> Installation </h2>
 
-Chōchin needs a Python 3 interpreter with numpy, PyQt4 and PyOpenGL packages. You can install these packages individually or get them through a Python distribution like [Anaconda](https://store.continuum.io/cshop/anaconda/).
+Chōchin needs a Python (2.7 or 3.x should work) interpreter with numpy, PyQt4 and PyOpenGL packages. You can install these packages individually or get them through a Python distribution like [Anaconda](https://store.continuum.io/cshop/anaconda/).
 
 
 <h2> Data format </h2>

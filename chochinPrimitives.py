@@ -55,7 +55,8 @@ def parse_shader(source):
         lsplit, array_size = parse_array_size(lsplit)
         lsplit = lsplit.split()
         if len(lsplit) > 0 and lsplit[0] in in_var:
-            in_var[lsplit[0]].append((*lsplit[1:], int(array_size)))
+            new_var = tuple(lsplit[1:]) + (int(array_size),)
+            in_var[lsplit[0]].append(new_var)
     return in_var
 
 
@@ -184,7 +185,10 @@ class Sticks(ChochinPrimitiveArray):
     """
 
     def __init__(self):
-        super().__init__(self.s_vert, self.s_frag, gl.GL_TRIANGLES)
+        ChochinPrimitiveArray.__init__(self,
+                                       self.s_vert,
+                                       self.s_frag,
+                                       gl.GL_TRIANGLES)
 
     def set_data(self, line_ends, thicknesses, colors, layers):
         n = line_ends.shape[0]
@@ -315,10 +319,10 @@ class Circles(ChochinPrimitiveArray):
     """
 
     def __init__(self):
-        super().__init__(self.c_vert, self.c_frag, gl.GL_POINTS)
-        # self.set_uniform('u_antialias', np.float32(1))
-        # self.set_uniform('u_linewidth', np.float32(1))
-        # self.set_uniform('u_scale', np.array([1, 1], dtype=np.float32))
+        ChochinPrimitiveArray.__init__(self,
+                                       self.c_vert,
+                                       self.c_frag,
+                                       gl.GL_POINTS)
 
     def set_data(self, centers, radii, colors, layers):
         n = centers.shape[0]
@@ -376,7 +380,10 @@ class Lines(ChochinPrimitiveArray):
     """
 
     def __init__(self):
-        super().__init__(self.vert, self.frag, gl.GL_LINES)
+        ChochinPrimitiveArray.__init__(self,
+                                       self.vert,
+                                       self.frag,
+                                       gl.GL_LINES)
 
     def set_data(self, line_ends, colors, layers):
         line_ends = line_ends.reshape((-1, 3))
