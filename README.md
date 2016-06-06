@@ -14,7 +14,7 @@ Yaplot-style command files containing lines, sticks, circles and texts are proce
 The layer, color and radius commands are supported.
 It is possible, to rotate, translate, zoom in and out, select layers to display, etc.
 
-<h2> Installation </h2>
+<h2> Installation and usage </h2>
 
 Chōchin needs a Python 3 interpreter with numpy, PyQt4 and PyOpenGL packages. You can install these packages individually or get them through a Python distribution like [Anaconda](https://store.continuum.io/cshop/anaconda/).
 You will also need a C++ compiler.
@@ -28,6 +28,16 @@ and run
 $ python setup.py build_ext --inplace
 ```
 in the topmost Chōchin directory.
+
+To use, you can simply
+```
+$ python chochin.py your_data_cmd.txt
+```
+More probably, you want to make `chochin.py` executable and/or create an alias for it in your shell configuration file, so that you can
+```
+$ chochin your_data_cmd.txt
+```
+
 
 <h2> Data format </h2>
 
