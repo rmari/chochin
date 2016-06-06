@@ -526,7 +526,10 @@ class ChochinCanvas(QGLWidget):
         self.rad_scale = self.port_size
 
     def setViewPort(self):
-        gl.glViewport(*self.offset, self.port_size, self.port_size)
+        gl.glViewport(self.offset[0],
+                      self.offset[1],
+                      self.port_size,
+                      self.port_size)
 
     def resizeGL(self, width, height):
         """Called upon window resizing: reinitialize the viewport.
