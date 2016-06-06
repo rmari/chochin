@@ -6,7 +6,7 @@ Chōchin is a program to visualize computer simulations data (typically
 Molecular Dynamics data) in an easy manner. Chōchin is mostly a clone of [Yaplot](https://github.com/vitroid/Yaplot), based on
 the same idea of a simple set of commands interpreted to render an
 intentionally basic representation of 3D data. It is however based on a more modern graphic stack, using shader-based OpenGL for rendering, and PyQt4 for the GUI.
-The use of Python makes it easier to hack and modify.
+The use of Python for the GUI makes it easy to hack and modify.
 
 So far not all of Yaplot features
 are available (and possibly some of them will never be, the goal is not to be 100% Yaplot compatible).
@@ -17,11 +17,21 @@ It is possible, to rotate, translate, zoom in and out, select layers to display,
 <h2> Installation </h2>
 
 Chōchin needs a Python 3 interpreter with numpy, PyQt4 and PyOpenGL packages. You can install these packages individually or get them through a Python distribution like [Anaconda](https://store.continuum.io/cshop/anaconda/).
+You will also need a C++ compiler.
 
+To install, clone this repository
+```
+$ git clone https://github.com/rmari/chochin.git
+```
+and run
+```
+$ python setup.py build_ext --inplace
+```
+in the topmost Chōchin directory.
 
 <h2> Data format </h2>
 
-Currently, Chōchin supports the following subset of Yaplot's data format:
+Currently, Chōchin supports the following subset of Yaplot data format:
 
 | Command | Result |
 |---------|--------|
@@ -58,7 +68,7 @@ from PyQt4.QtGui import QColor
 
 color_palette = [ Qt.black, Qt.gray, (200,200,200,100), ... ]
 ```
-The number of colors is unlimited. Colors must be [Qt colors](http://qt-project.org/doc/qt-4.8/qcolor.html) or tuples (r,g,b,a).
+The number of colors is unlimited. Colors can be [Qt colors](http://qt-project.org/doc/qt-4.8/qcolor.html) or tuples (r,g,b,a).
 
 <h2> Control commands </h2>
 
