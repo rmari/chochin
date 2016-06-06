@@ -85,9 +85,6 @@ class chochinScene:
             if k == "c":
                 displayed_pos[k] = self.obj_vals[k]
                 displayed_attrs[k] = self.obj_attrs[k]
-            elif k == "t":
-                displayed_pos[k] = self.rotate(self.obj_vals[k])
-                displayed_attrs[k] = self.obj_attrs[k]
             else:
                 displayed_pos[k] = self.rotate(self.obj_vals[k])
                 displayed_attrs[k] = self.obj_attrs[k]
