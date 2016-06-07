@@ -227,13 +227,13 @@ class Circles(ChochinPrimitiveArray):
     uniform float u_rad_scale;
     uniform mat3 u_rotation;
     uniform vec3 u_push;
+    uniform float u_reality;
     uniform float u_active_layers[12];
 
     // Attributes
     // ------------------------------------
     attribute vec3  a_position;
-    attribute vec4  a_fg_color;
-    attribute vec4  a_bg_color;
+    attribute vec4  a_color;
     attribute float a_size;
     attribute float a_layer;
 
@@ -250,8 +250,12 @@ class Circles(ChochinPrimitiveArray):
         v_size = a_size*u_rad_scale*u_scale;
         v_linewidth = u_linewidth;
         v_antialias = u_antialias;
-        v_fg_color  = a_fg_color;
-        v_bg_color  = a_bg_color;
+        if (u_reality == 1.) {
+            v_fg_color  = vec4(0, 0, 0, 1);
+        } else {
+            v_fg_color  = a_color;
+        }
+        v_bg_color  = a_color;
         v_discard = u_active_layers[int(a_layer)];
         gl_Position = vec4((u_rotation*a_position+u_push)*u_scale,1.0);
         gl_PointSize = v_size + 2*(v_linewidth + 1.5*v_antialias);
@@ -326,16 +330,14 @@ class Circles(ChochinPrimitiveArray):
 
     def set_data(self, centers, radii, colors, layers):
         n = centers.shape[0]
-        data_c = np.zeros((n, 13), dtype=np.float32)
+        data_c = np.zeros((n, 9), dtype=np.float32)
         data_c[:, :3] = centers
         data_c[:, 3:7] = colors
-        data_c[:, 7:11] = 0, 0, 0, 1
-        data_c[:, 11] = radii
-        data_c[:, 12] = layers
+        data_c[:, 7] = radii
+        data_c[:, 8] = layers
         self.set_vbo(data_c)
         self.attributes = ['a_position',
-                           'a_bg_color',
-                           'a_fg_color',
+                           'a_color',
                            'a_size',
                            'a_layer']
 

@@ -80,6 +80,7 @@ class ChochinCanvas(QGLWidget):
             self, QtOpenGL.QGLFormat(QtOpenGL.QGL.SampleBuffers), parent)
         self.installEventFilter(self)
         self.layer_activity = np.ones(12, dtype=np.bool)
+        self.reality = 1
 
     def setSceneGeometry(self):
         self.scene.rotation = self.rotation
@@ -302,6 +303,17 @@ class ChochinCanvas(QGLWidget):
             self.loadScene()
         return caught
 
+    def handleRealityKey(self, e, m):
+        caught = False
+
+        if e == QtCore.Qt.Key_Minus:
+            self.reality = 0
+            caught = True
+        elif e == QtCore.Qt.Key_Plus:
+            self.reality = 1
+            caught = True
+        return caught
+
     def handleLayerKey(self, e, m):
         caught = False
 
@@ -351,6 +363,8 @@ class ChochinCanvas(QGLWidget):
             caught = self.handlePointOfViewKey(e, m)
         if not caught:
             caught = self.handleFrameSwitchKey(e, m)
+        if not caught:
+            caught = self.handleRealityKey(e, m)
         return caught
 
     def keyPressEvent(self, event):
@@ -463,6 +477,8 @@ class ChochinCanvas(QGLWidget):
             self.objects["c"].set_uniform('u_push', push_vector)
             self.objects["c"].set_uniform('u_active_layers',
                                           self.layer_activity)
+            self.objects["c"].set_uniform('u_reality',
+                                          self.reality)
             self.objects["c"].draw()
 
     def configureGL(self):
