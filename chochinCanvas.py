@@ -441,7 +441,9 @@ class ChochinCanvas(QGLWidget):
             pos, attrs = np.array(self.objects["t"][0]), self.objects["t"][1]
             pos *= 0.5*self.port_size*self.scale
             pos[:, 1] *= -1
-            pos[:, [0, 1]] += 0.5*self.port_size + np.array(self.offset)
+            pos[:, [0, 1]] += 0.5*self.port_size
+            pos[:, 0] += self.offset[0]
+            pos[:, 1] -= self.offset[1]
 
             for i in range(len(pos)):
                 if self.layer_activity[attrs["y"][i]]:
