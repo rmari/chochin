@@ -440,11 +440,17 @@ class ChochinCanvas(QGLWidget):
         painter.setPen(QtCore.Qt.black)
         if "t" in self.object_types:
             pos, attrs = np.array(self.objects["t"][0]), self.objects["t"][1]
-            pos *= 0.5*self.port_size*self.scale
-            pos[:, 1] *= -1
-            pos[:, [0, 1]] += 0.5*self.port_size
-            pos[:, 0] += self.offset[0]
-            pos[:, 1] -= self.offset[1]
+            pos = pos[:, :2]
+
+            # go to gl "normalized device coordinates"
+            pos *= self.scale
+            # apply the transform from nd coords to viewport coords
+            pos += 1
+            pos *= 0.5*self.port_size
+            pos += self.offset
+            # now we need to account for the fact that in Qt y
+            # is from top to bottom
+            pos[:, 1] = self.height - pos[:, 1]
 
             for i in range(len(pos)):
                 if self.layer_activity[attrs["y"][i]]:
