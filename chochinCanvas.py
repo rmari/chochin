@@ -163,6 +163,7 @@ class ChochinCanvas(QGLWidget):
         self.parent().timer.start(self.speed, self.parent())
 
     def goToFrame(self, n):
+        self.former_frame = self.frame
         frame_nb = self.data.frame_nb()
         if n > frame_nb - 1:
             self.frame = frame_nb - 1
