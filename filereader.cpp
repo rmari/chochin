@@ -8,17 +8,20 @@
 struct Frame {
   std::map <std::string, std::vector < float > >  positions;
   std::map <std::string, std::vector < float > > thicknesses;
-  std::map <std::string, std::vector < int > > colors;
+  std::map <std::string, std::vector < std::vector < float > > > colors;
   std::map <std::string, std::vector < int > > layers;
   std::map <std::string, std::vector < std::string > > texts;
 };
+
 
 class filereader {
 private:
   std::ifstream in_file;
   int layer;
-  int color;
+  std::vector < float > color; // rgba
   float thickness;
+  // std::vector <struct Color> palette;
+  std::vector < std::vector < float > > palette;
 
 public:
   // std::map <std::string, std::vector < std::vector < float > > > positions;
@@ -30,13 +33,12 @@ public:
     in_file.close();
   };
 
-  // std::vector<float> fetch(std::istringstream &sline, unsigned int size){
-  //   std::vector < float > read_vec (size);
-  //   for(unsigned int i=0; i<size; i++){
-  //     sline >> read_vec[i];
-  //   }
-  //   return read_vec;
-  // };
+  void setPalette(const std::vector < std::vector < float > > &color_palette){
+    palette = color_palette;
+    // for (auto p: palette){
+    //   std::cout << p[0] << " " <<  p[1] << " " << p[2] << " " << p[3]  << std::endl;
+    // }
+  }
 
   void getCircle(std::istringstream &sline, struct Frame &frame) {
     double coord;
@@ -83,6 +85,26 @@ public:
     frame.texts["t"].push_back(t);
   };
 
+  void getColor(std::istringstream &sline) {
+    std::string line;
+    std::getline(sline, line);
+    std::istringstream remaining(line);
+    float component;
+    std::vector<float> col;
+    while(remaining >> component) {
+      col.push_back(component);
+    }
+
+    if (col.size() == 1) {           // by label
+      color = palette[col[0]];
+    } else if (col.size() == 3) {    // by rgb
+      col.push_back(1);
+      color = col;
+    } else if (col.size() == 4) {    // by rgba
+      color = col;
+    }
+  };
+
   bool get(){
     std::string cmd;
     struct Frame frame;
@@ -108,7 +130,7 @@ public:
       } else if (cmd == "y") {
         sline >> layer;
       } else if (cmd == "@") {
-        sline >> color;
+        getColor(sline);
       } else if (cmd == "r") {
         sline >> thickness;
       } else {

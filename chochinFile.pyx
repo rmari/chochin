@@ -15,7 +15,7 @@ cdef extern from "filereader.cpp":
   cdef struct Frame:
     map[string, vector[float]] positions
     map[string, vector[float]] thicknesses
-    map[string, vector[int]] colors
+    map[string, vector[vector[float]]] colors
     map[string, vector[int]] layers
     map[string, vector[string]] texts
 
@@ -24,6 +24,7 @@ cdef extern from "filereader.cpp":
           filereader(string) except +
           vector[Frame] frames
           bool get()
+          void setPalette(vector[ vector [float] ])
 
 cdef class chochinFile:
     cdef filereader *thisptr      # hold a C++ instance which we're wrapping
@@ -39,7 +40,7 @@ cdef class chochinFile:
             pass
 
     def setPalette(self, palette):
-        self.color_palette = palette
+        self.thisptr.setPalette(palette)
 
     def get_attrs(self, index):
         frame_data = self.thisptr.frames[index]
@@ -52,21 +53,21 @@ cdef class chochinFile:
                                             ('@', np.float32, 4),
                                             ('r', np.float32, 1)])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = frame_data.colors[o]
                 attrs[o_str]['r'] = frame_data.thicknesses[o]
             elif o == b"l":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
                                         ('@', np.float32, 4)])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = frame_data.colors[o]
             elif o == b"t":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
                                         ('@', np.float32, 4),
                                         ('s', ('U', 100))])
                 attrs[o_str]['y'] = frame_data.layers[o]
-                attrs[o_str]['@'] = self.color_palette[frame_data.colors[o]]
+                attrs[o_str]['@'] = frame_data.colors[o]
                 attrs[o_str]['s'] = frame_data.texts[o]
 
         return attrs
