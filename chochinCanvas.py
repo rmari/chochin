@@ -60,7 +60,19 @@ for c in color_palette:
     try:
         color = QtGui.QColor(c)
     except TypeError:
-        color = QtGui.QColor(*c)
+        c = np.array(c)
+        # a bit hacky: try to determine if the input is
+        # in float rgba or in int rgb.
+        # Ideally you would rather like to try the set the QColor and catch the
+        # out of range exception if any (like the TypeError above).
+        # But this exception happens in Qt, not PyQt,
+        # and the caller cannot catch Qt exceptions, so we have no choice.
+        if np.mean(c) <= 1.:
+            c *= 255
+
+        if len(c) == 3:  # rgb, not rgba
+            c = np.append(c, 255)
+        color = QtGui.QColor(*c.astype(np.int))
     p.append(color.getRgbF())
 
 color_palette = np.array(p)

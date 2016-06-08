@@ -46,7 +46,9 @@ Currently, Chōchin supports the following subset of Yaplot data format:
 | Command | Result |
 |---------|--------|
 | Empty line | New frame |
-| @ [0-9] | Set the color of following objects (see default color palette below) |
+| @ n | Set the color of following objects (see default color palette below) |
+| @ r g b | Set the color of following objects by setting RGB values in the range [0,1] |
+| @ r g b a | Set the color of following objects by setting RGB-alpha values in the range [0,1] |
 | y [1-12] | Set the layer of following objects |
 | r x | Set the thickness/radius of following objects to x |
 | l x1 y1 z1 x2 y2 z2 | Draw a line from 1 to 2 |
@@ -69,16 +71,17 @@ Default colors:
 | 8 | Qt.darkGreen |
 | 9 | Qt.cyan |
 
-User can override this default palette. Just create a file called
+You can override this default palette. Just create a file called
 `chochin_palette.py` in the directory where you launch Chōchin. In this
 file, you can define a color palette as, for example:
 ```
 from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QColor
 
-color_palette = [ Qt.black, Qt.gray, (200,200,200,100), ... ]
+color_palette = [ Qt.black, Qt.gray, (0.5,0.1,0.5,0.7), ... ]
 ```
-The number of colors is unlimited. Colors can be [Qt colors](http://qt-project.org/doc/qt-4.8/qcolor.html) or tuples (r,g,b,a).
+The number of colors is unlimited. Colors can be [Qt colors](http://qt-project.org/doc/qt-4.8/qcolor.html), tuples `(r,g,b)`, or tuples `(r,g,b,a)`.
+You can use transparency by playing with the `a` parameter. Note that the values are in the
+[0,1] range.
 
 <h2> Control commands </h2>
 
