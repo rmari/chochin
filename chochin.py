@@ -105,6 +105,7 @@ if __name__ == '__main__':
                              100,
                              self.datawidget.width,
                              self.datawidget.height)
+            self.setWindowTitle("Chōchin - " + filename)
             self.setCentralWidget(self.datawidget)
 
             self.scene_info_widget = SceneInfoWidget(self, 180, 120)
