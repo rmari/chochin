@@ -134,7 +134,7 @@ public:
       } else if (cmd == "r") {
         sline >> thickness;
       } else {
-        std::cout << "[ chochin ] unrecognized command " << line << std::endl;
+        std::cout << "[chochin] unrecognized command \"" << line <<  "\"" << std::endl;
       }
     }
     return !empty;
