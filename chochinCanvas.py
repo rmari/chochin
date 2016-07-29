@@ -112,6 +112,8 @@ class ChochinCanvas(QGLWidget):
     def setFile(self, filename):
         print("[chochin] Set file")
         self.data = cFile.chochinFile(filename.encode("utf8"))
+
+    def readFileAndDisplay(self):
         self.data.setPalette(color_palette)
         self.data.readChunk()
         print("[chochin] File loaded")

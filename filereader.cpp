@@ -28,6 +28,9 @@ public:
   std::vector < struct Frame > frames;
   filereader(std::string fname){
     in_file.open(fname.c_str(), std::ifstream::in);
+    if (!in_file.is_open()) {
+      throw std::runtime_error("Could not open file.\n ");
+    }
   };
   ~filereader(){
     in_file.close();

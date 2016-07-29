@@ -110,8 +110,8 @@ if __name__ == '__main__':
 
             self.scene_info_widget = SceneInfoWidget(self, 180, 120)
             self.show()
-
             self.datawidget.setFile(filename)
+            self.datawidget.readFileAndDisplay()
             self.setInfoWidget()
 
         def setInfoWidget(self):
@@ -148,6 +148,9 @@ if __name__ == '__main__':
         print("Usage:\n chochin.py input_file")
         exit(1)
     app = QtGui.QApplication(sys.argv)
-    window = ChochinWindow(sys.argv[1])
-    window.show()
-    app.exec_()
+    try:
+        window = ChochinWindow(sys.argv[1])
+        app.exec_()
+    except RuntimeError as e:
+        print(e)
+        exit(1)
