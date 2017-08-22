@@ -43,9 +43,10 @@ cdef class chochinFile:
         self.thisptr.setPalette(palette)
 
     def get_attrs(self, index):
-        frame_data = dict(self.thisptr.frames[index])
+        frame_data = self.thisptr.frames[index]
+        frame_data_pos = dict(frame_data.positions)
         attrs = {}
-        for o in frame_data.positions.keys():
+        for o in frame_data_pos.keys():
             o_str = o.decode()
             if o == b"c" or o == b"s":
                 n = frame_data.layers[o].size()
@@ -73,16 +74,15 @@ cdef class chochinFile:
         return attrs
 
     def __getitem__(self, index):
-        frame_data = dict(self.thisptr.frames[index])
+        frame_data_pos = dict(self.thisptr.frames[index].positions)
         pos = {}
         size = {b'c': 3,
                 b's': 6,
                 b'l': 6,
                 b't': 3}
-        # print(frame_data.keys())
-        for o in frame_data.positions.keys():
+        for o in frame_data_pos.keys():
             o_str = o.decode()
-            pos[o_str] = np.array(frame_data.positions[o],
+            pos[o_str] = np.array(frame_data_pos[o],
                                   dtype=np.float32)
             pos[o_str].shape = (-1, size[o])
         attrs = self.get_attrs(index)

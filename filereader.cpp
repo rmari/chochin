@@ -26,7 +26,11 @@ private:
 public:
   // std::map <std::string, std::vector < std::vector < float > > > positions;
   std::vector < struct Frame > frames;
-  filereader(std::string fname){
+  filereader(std::string fname) :
+  layer(1),
+  color({0,0,0,0}),
+  thickness(1)
+  {
     in_file.open(fname.c_str(), std::ifstream::in);
     if (!in_file.is_open()) {
       throw std::runtime_error("Could not open file.\n ");
