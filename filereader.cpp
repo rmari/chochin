@@ -1,16 +1,16 @@
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
 
 struct Frame {
-  std::map <std::string, std::vector < float > >  positions;
-  std::map <std::string, std::vector < float > > thicknesses;
-  std::map <std::string, std::vector < std::vector < float > > > colors;
-  std::map <std::string, std::vector < int > > layers;
-  std::map <std::string, std::vector < std::string > > texts;
+  std::unordered_map <std::string, std::vector < float > >  positions;
+  std::unordered_map <std::string, std::vector < float > > thicknesses;
+  std::unordered_map <std::string, std::vector < std::vector < float > > > colors;
+  std::unordered_map <std::string, std::vector < int > > layers;
+  std::unordered_map <std::string, std::vector < std::string > > texts;
 };
 
 
