@@ -308,7 +308,7 @@ class Circles(ChochinPrimitiveArray):
         }
         else if( d < 0.0 )
         {
-           gl_FragColor = v_fg_color;
+            gl_FragColor = v_fg_color;
         }
         else
         {
