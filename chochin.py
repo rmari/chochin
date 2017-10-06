@@ -18,8 +18,7 @@
 #
 
 # PyQt5 imports
-from PyQt5.QtCore import Qt
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets, Qt
 
 import chochinCanvas as cCanvas
 
@@ -54,7 +53,7 @@ class SceneInfoWidget(QtWidgets.QWidget):
         bgcolor = QtCore.Qt.white
         painter.setPen(bgcolor)
         painter.setBrush(bgcolor)
-        painter.drawRoundedRect(rect, 20, 20, mode=Qt.RelativeSize)
+        painter.drawRoundedRect(rect, 20, 20, mode=Qt.Qt.RelativeSize)
 
         textcolor = QtCore.Qt.black
         painter.setPen(textcolor)

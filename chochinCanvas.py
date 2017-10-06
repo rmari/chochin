@@ -20,7 +20,7 @@ import os
 import numpy as np
 
 # PyQt5 imports
-from PyQt5 import QtGui, QtCore, QtOpenGL
+from PyQt5 import QtGui, QtCore, QtOpenGL, QtWidgets
 from PyQt5.QtOpenGL import QGLWidget
 
 # PyOpenGL imports
@@ -126,7 +126,7 @@ class ChochinCanvas(QGLWidget):
         self.setSceneGeometry()
 
         pos, attrs = self.scene.getDisplayedScene()
-        print(pos)
+        # print(pos)
         self.object_types = []
 
         # sticks
@@ -404,7 +404,7 @@ class ChochinCanvas(QGLWidget):
             self.update()
 
     def mousePressEvent(self, event):
-        modifier = QtGui.QApplication.keyboardModifiers()
+        modifier = QtWidgets.QApplication.keyboardModifiers()
         if event.button() == QtCore.Qt.LeftButton:
             self.current_point = event.pos()
             self.translate = False
@@ -441,7 +441,6 @@ class ChochinCanvas(QGLWidget):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
         """
         self.configureGL()
-        print("init GL")
         self.objects = {}
         self.objects["s"] = cPrim.Sticks()
         self.objects["c"] = cPrim.Circles()
