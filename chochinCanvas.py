@@ -105,8 +105,10 @@ class ChochinCanvas(QGLWidget):
         self.reset_rotation[1, 2] = 1
         self.reset_rotation[2, 1] = 1
         self.rotation = self.reset_rotation[:]
-        self.scale = 1./self.scene.getLargestDimension()
-
+        if self.scene.getLargestDimension() > 0:
+            self.scale = 1./self.scene.getLargestDimension()
+        else:
+            self.scale = 1
         self.setSceneGeometry()
 
     def setFile(self, filename):
