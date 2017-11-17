@@ -174,17 +174,24 @@ class ChochinCanvas(QGLWidget):
                             [sinAngleY, cosAngleY, 0],
                             [0, 0, 1]])
         self.rotation = generator*self.rotation
-
+        print(self.rotation)
+        
     def start_anim(self):
         self.parent().timer.start(self.speed, self.parent())
 
-    def goToFrame(self, n):
+    def goToFrame(self, n, loop=False):
         self.former_frame = self.frame
         frame_nb = self.data.frame_nb()
-        if n > frame_nb - 1:
-            self.frame = frame_nb - 1
+        if n > frame_nb - 2:
+            if loop:
+                self.frame = 0
+            else:
+                self.frame = frame_nb - 2
         elif n < 0:
-            self.frame = 0
+            if loop:
+                self.frame = frame_nb - 2
+            else:
+                self.frame = 0
         else:
             self.frame = n
         self.loadScene()
@@ -192,9 +199,9 @@ class ChochinCanvas(QGLWidget):
     def timerEvent(self, event):
         if event.timerId() == self.parent().timer.timerId():
             if self.forward_anim:
-                self.goToFrame(self.frame + 1)
+                self.goToFrame(self.frame + 1, loop=True)
             else:
-                self.goToFrame(self.frame - 1)
+                self.goToFrame(self.frame - 1, loop=True)
             self.update()
         else:
             QtGui.QWidget.timerEvent(self, event)
