@@ -511,6 +511,8 @@ class ChochinCanvas(QGLWidget):
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glEnable(gl.GL_BLEND)
         gl.glEnable(gl.GL_MULTISAMPLE)
+        gl.glEnable(gl.GL_POINT_SPRITE)
+        
         gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
 
     def enableGLPainting(self, qpainter):
