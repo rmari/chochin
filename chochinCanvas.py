@@ -36,24 +36,25 @@ if os.path.isfile(color_fname):
     color_palette = chochin_palette.color_palette
 else:
     color_palette = [QtCore.Qt.black,
-                     QtCore.Qt.gray,
+                     (200, 200, 200, 255),
                      QtCore.Qt.white,
-                     QtCore.Qt.green,
-                     QtCore.Qt.yellow,
-                     QtCore.Qt.red,
-                     QtCore.Qt.blue,
-                     QtCore.Qt.magenta,
-                     QtCore.Qt.darkGreen,
-                     QtCore.Qt.cyan,
-                     QtCore.Qt.gray,
-                     QtCore.Qt.white,
-                     QtCore.Qt.green,
-                     QtCore.Qt.yellow,
-                     QtCore.Qt.red,
-                     QtCore.Qt.blue,
-                     QtCore.Qt.magenta,
-                     QtCore.Qt.darkGreen,
-                     QtCore.Qt.cyan]
+                     (255, 102, 102, 255),
+                     (102, 0, 0, 255),
+                     (0, 102, 0, 255),
+                     (0, 0, 102, 255),
+                     (255, 255, 102, 255),
+                     (255, 152, 51, 255),
+                     (102, 178, 255, 255),
+                     (255, 153, 255, 255),
+                     (0, 102, 102, 255),
+                     (51, 102, 0, 255),
+                     (51, 0, 102, 255),
+                     (102, 0, 51, 255),
+                     (102, 51, 0, 255),
+                     (0, 51, 102, 255),
+                     (32, 32, 32, 255),
+                     (96, 96, 96, 255),
+                     (192, 192, 192, 255)]
 
 p = []
 for c in color_palette:
@@ -174,7 +175,6 @@ class ChochinCanvas(QGLWidget):
                             [sinAngleY, cosAngleY, 0],
                             [0, 0, 1]])
         self.rotation = generator*self.rotation
-        print(self.rotation)
         
     def start_anim(self):
         self.parent().timer.start(self.speed, self.parent())
