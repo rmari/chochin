@@ -36,7 +36,7 @@ if os.path.isfile(color_fname):
     color_palette = chochin_palette.color_palette
 else:
     color_palette = [QtCore.Qt.black,
-                     (200, 200, 200, 255),
+                     (50, 50, 50, 255),
                      QtCore.Qt.white,
                      (255, 102, 102, 255),
                      (102, 0, 0, 255),
@@ -476,8 +476,7 @@ class ChochinCanvas(QGLWidget):
 
             for i in range(len(pos)):
                 if self.layer_activity[attrs["y"][i]]:
-                    painter.setPen(QtGui.QColor(*(attrs["@"][i])))
-                    painter.setPen(QtCore.Qt.black)
+                    painter.setPen(QtGui.QColor(*(np.array(attrs["@"][i])*255)))
                     painter.drawText(pos[i][0],
                                      pos[i][1],
                                      attrs["s"][i])
