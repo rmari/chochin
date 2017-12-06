@@ -11,38 +11,31 @@ def compile_shader(source, shader):
     result = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
     if not(result):
         raise RuntimeError(gl.glGetShaderInfoLog(shader))
-    print(shader)
     return shader
 
 
-def link_shader(*shaders):
+def link_shader(shaders):
     """Create a shader program with from compiled shaders."""
     # from http://cyrille.rossant.net/shaders-opengl/
     program = gl.glCreateProgram()
     for shader in shaders:
-        print(shader)
         gl.glAttachShader(program, shader)
     gl.glLinkProgram(program)
     # check linking error
     result = gl.glGetProgramiv(program, gl.GL_LINK_STATUS)
-    if not(result):
+    if not result:
         raise RuntimeError(gl.glGetProgramInfoLog(program))
     return program
 
 
-def make_shader_program(vertex_source, fragment_source, geometry_source=""):
-    vs = compile_shader(vertex_source,
-                        gl.glCreateShader(gl.GL_VERTEX_SHADER))
-    
-    fs = compile_shader(fragment_source,
-                        gl.glCreateShader(gl.GL_FRAGMENT_SHADER))
+def make_shader_program(vertex, fragment, geometry=""):
+    shaders = []
+    shaders.append(compile_shader(vertex, gl.glCreateShader(gl.GL_VERTEX_SHADER)))
+    shaders.append(compile_shader(fragment, gl.glCreateShader(gl.GL_FRAGMENT_SHADER)))
     # compile the vertex shader
-    if geometry_source != "":
-        gs = compile_shader(geometry_source,
-                            gl.glCreateShader(gl.GL_GEOMETRY_SHADER))
-        return link_shader([vs, gs, fs])
-    else:
-        return link_shader([vs, fs])
+    if geometry != "":
+        shaders.append(compile_shader(geometry, gl.glCreateShader(gl.GL_GEOMETRY_SHADER)))
+    return link_shader(shaders)
 
 
 def parse_array_size(src_line):
@@ -54,8 +47,7 @@ def parse_array_size(src_line):
 
 
 def parse_shader(source):
-    in_var = {'attribute': [],
-              'varying': [],
+    in_var = {'in': [],
               'uniform': []}
 
     for line in source.splitlines():
@@ -68,7 +60,7 @@ def parse_shader(source):
     return in_var
 
 
-def attribute_size(v):
+def in_size(v):
     if v == 'float':
         return 1, gl.GL_FLOAT
     if v[:3] == 'vec':
@@ -94,26 +86,26 @@ def uniform_setter(utype, uname, usize):
 
 class ChochinPrimitiveArray:
     def __init__(self, shaders, gl_primitive):
-        self.shaders_program = make_shader_program(*shaders)
+        self.shaders_program = make_shader_program(**shaders)
 
-        self.attributes_loc = {}
-        self.attributes_size = {}
-        self.attributes_type = {}
+        self.ins_loc = {}
+        self.ins_size = {}
+        self.ins_type = {}
         self.uniforms_loc = {}
         self.uniforms_setters = {}
         self.uniforms_val = {}
-        self.parse_shader_var(vertex_code, fragment_code)
+        self.parse_shader_var(shaders['vertex'])
         self.gl_primitive = gl_primitive
     
-    def parse_shader_var(self, vertex_code, fragment_code):
-        in_var = parse_shader(vertex_code + fragment_code)
-        for a in in_var['attribute']:
+    def parse_shader_var(self, vertex_code):
+        in_var = parse_shader(vertex_code)
+        for a in in_var['in']:
             a_type, a_name, a_size = a
-            self.attributes_loc[a_name] =\
+            self.ins_loc[a_name] =\
                 gl.glGetAttribLocation(self.shaders_program, a_name)
-            self.attributes_size[a_name],\
-                self.attributes_type[a_name] = attribute_size(a_type)
-        self.attribute_stride = 4*sum(self.attributes_size.values())
+            self.ins_size[a_name],\
+                self.ins_type[a_name] = in_size(a_type)
+        self.in_stride = 4*sum(self.ins_size.values())
 
         for u in in_var['uniform']:
             u_type, u_name, u_size = u
@@ -132,17 +124,17 @@ class ChochinPrimitiveArray:
 
     def draw(self):
         self.vbo.bind()
-        for a in self.attributes_loc:
-            gl.glEnableVertexAttribArray(self.attributes_loc[a])
+        for a in self.ins_loc:
+            gl.glEnableVertexAttribArray(self.ins_loc[a])
         offset = 0
-        for a in self.attributes:
-            gl.glVertexAttribPointer(self.attributes_loc[a],
-                                     self.attributes_size[a],
-                                     self.attributes_type[a],
+        for a in self.ins_loc:
+            gl.glVertexAttribPointer(self.ins_loc[a],
+                                     self.ins_size[a],
+                                     self.ins_type[a],
                                      gl.GL_FALSE,
-                                     self.attribute_stride,
+                                     self.in_stride,
                                      self.vbo + offset)
-            offset += 4*self.attributes_size[a]
+            offset += 4*self.ins_size[a]
 
         gl.glUseProgram(self.shaders_program)
         for u in self.uniforms_loc:
@@ -153,7 +145,7 @@ class ChochinPrimitiveArray:
         self.vbo.unbind()
 
 
-class Sticks2(ChochinPrimitiveArray):
+class Sticks(ChochinPrimitiveArray):
     s_vert = """
     #version 150 core
 
@@ -161,20 +153,22 @@ class Sticks2(ChochinPrimitiveArray):
     uniform float u_scale;
     uniform vec3 u_push;
     uniform float u_active_layers[12];
+    uniform mat3 u_rotation;
 
-    attribute vec3 a_position;
-    attribute vec4 a_fg_color;
-    attribute float a_layer;
-    attribute float a_thickness;
+    in vec3 a_position;
+    in float a_layer;
+    in vec4 a_color;
+    in float a_thickness;
 
-    varying vec4 v_fg_color;
-    varying float v_discard;
+    out vec4 color;
+    out float v_discard;
+    out float v_thickness;
 
     void main (void) {
         v_discard = u_active_layers[int(a_layer)];
-        v_fg_color  = a_fg_color;
-        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
-        gl_PointSize = a_thickness*u_scale;
+        color  = a_color;
+        gl_Position = vec4((u_rotation*a_position+u_push)*u_scale,1.0);
+        v_thickness = u_scale*a_thickness;
     }
     """
 
@@ -182,44 +176,55 @@ class Sticks2(ChochinPrimitiveArray):
     #version 150 core
 
     layout(lines) in;
-    layout(triangles, max_vertices = 4) out;
+    layout(triangle_strip, max_vertices = 4) out;
+
+    in vec4 color[];
+    in float v_discard[];
+    in float v_thickness[];
+
+    out vec4 fcolor;
 
     void main()
     {
-        float stick_length = length(gl_in[1].gl_Position-gl_in[0].gl_Position);
-        
-        vec4 u = 0.5*gl_in[0].gl_PointSize*vec4(gl_in[1].gl_Position/stick_length, -gl_in[0].gl_Position/stick_length, 0, 0);
-        gl_Position = gl_in[0].gl_Position + u;
-        EmitVertex();
-        gl_Position = gl_in[0].gl_Position - u;
-        EmitVertex();
-        gl_Position = gl_in[1].gl_Position + u;
-        EmitVertex();
-        gl_Position = gl_in[1].gl_Position - u;
-        EmitVertex();
-        EndPrimitive();
+        if (v_discard[0] > 0.1) {
+            fcolor = color[0];
+            vec4 n = gl_in[1].gl_Position-gl_in[0].gl_Position;
+            vec4 u = vec4(n.y, -n.x, 0, 0);
+            float lu = length(u);
+            if (lu > 0) {
+                u = (0.5*v_thickness[0]/lu)*u;
+                gl_Position = gl_in[0].gl_Position + u;
+                EmitVertex();
+                gl_Position = gl_in[0].gl_Position - u;
+                EmitVertex();
+                gl_Position = gl_in[1].gl_Position + u;
+                EmitVertex();
+                gl_Position = gl_in[1].gl_Position - u;
+                EmitVertex();
+                EndPrimitive();
+            }
+        }
     }
     """
 
     s_frag = """
     #version 150 core
 
-    varying vec4 v_fg_color;
-    varying float v_discard;
+    in vec4 fcolor;
 
     void main()
     {
-        if (v_discard < 0.1) {
-            discard;
-        }
-        gl_FragColor = v_fg_color;
+        gl_FragColor = fcolor;
     }
     """
 
     def __init__(self):
+        shaders = {'vertex': self.s_vert,
+                   'fragment': self.s_frag,
+                   'geometry': self.s_geom}
         ChochinPrimitiveArray.__init__(self,
-                                       [self.s_vert, self.s_frag, self.s_geom],
-                                       gl.GL_TRIANGLES)
+                                       shaders,
+                                       gl.GL_LINES)
 
     def set_data(self, line_ends, thicknesses, colors, layers):
         line_ends = line_ends.reshape((-1, 3))
@@ -231,81 +236,15 @@ class Sticks2(ChochinPrimitiveArray):
                                     layers,
                                     thicknesses)).astype(np.float32)
         self.set_vbo(vbo_data)
-        self.attributes = ['a_position', 'a_fg_color', 'a_layer', 'a_thickness']
+        self.ins = ['a_position', 'a_color', 'a_layer', 'a_thickness']
 
 
-
-class Sticks(ChochinPrimitiveArray):
-    s_vert = """
-    #version 120
-
-    // Uniforms
-    uniform float u_scale;
-    uniform vec3 u_push;
-    uniform float u_active_layers[12];
-
-    attribute vec3 a_position;
-    attribute vec4 a_fg_color;
-    attribute float a_layer;
-
-    varying vec4 v_fg_color;
-    varying float v_discard;
-
-    void main (void) {
-        v_discard = u_active_layers[int(a_layer)];
-        v_fg_color  = a_fg_color;
-        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
-    }
-    """
-
-    s_frag = """
-    #version 120
-
-    varying vec4 v_fg_color;
-    varying float v_discard;
-
-    void main()
-    {
-        if (v_discard < 0.1) {
-            discard;
-        }
-        gl_FragColor = v_fg_color;
-    }
-    """
-
-    def __init__(self):
-        ChochinPrimitiveArray.__init__(self,
-                                       [self.s_vert, self.s_frag],
-                                       gl.GL_TRIANGLES)
-
-    def set_data(self, line_ends, thicknesses, colors, layers):
-        n = line_ends.shape[0]
-        normals = np.empty(shape=(n, 3))
-        normals[:, 0] = np.ravel(line_ends[:, 4] - line_ends[:, 1])
-        normals[:, 1] = np.ravel(line_ends[:, 0] - line_ends[:, 3])
-        normals[:, 2] = 0
-        normals /= np.linalg.norm(normals, axis=1)[:, np.newaxis]
-        a_position = np.empty(shape=(6*n, 3))
-        thicknesses = thicknesses.reshape((n, 1))
-        a_position[::6] = line_ends[:, :3]+thicknesses*normals
-        a_position[1::6] = line_ends[:, :3]-thicknesses*normals
-        a_position[2::6] = line_ends[:, 3:]+thicknesses*normals
-        a_position[3::6] = a_position[1::6]
-        a_position[4::6] = a_position[2::6]
-        a_position[5::6] = line_ends[:, 3:]-thicknesses*normals
-        colors = np.repeat(colors, 6, axis=0)
-        layers = np.repeat(layers, 6, axis=0)
-        vbo_data = np.column_stack((a_position,
-                                    colors,
-                                    layers)).astype(np.float32)
-        self.set_vbo(vbo_data)
-        self.attributes = ['a_position', 'a_fg_color', 'a_layer']
 
 
 class Circles(ChochinPrimitiveArray):
     # shaders credit VisPy https://github.com/vispy/vispy (cloud.py example)
     c_vert = """
-    #version 120
+    #version 150 core
 
     // Uniforms
     // ------------------------------------
@@ -318,21 +257,21 @@ class Circles(ChochinPrimitiveArray):
     uniform float u_reality;
     uniform float u_active_layers[12];
 
-    // Attributes
+    // ins
     // ------------------------------------
-    attribute vec3  a_position;
-    attribute vec4  a_color;
-    attribute float a_size;
-    attribute float a_layer;
+    in vec3  a_position;
+    in vec4  a_color;
+    in float a_size;
+    in float a_layer;
 
     // Varyings
     // ------------------------------------
-    varying vec4 v_fg_color;
-    varying vec4 v_bg_color;
-    varying float v_size;
-    varying float v_linewidth;
-    varying float v_antialias;
-    varying float v_discard;
+    out vec4 v_fg_color;
+    out vec4 v_bg_color;
+    out float v_size;
+    out float v_linewidth;
+    out float v_antialias;
+    out float v_discard;
 
     void main (void) {
         v_size = a_size*u_rad_scale*u_scale;
@@ -351,7 +290,7 @@ class Circles(ChochinPrimitiveArray):
     """
 
     c_frag = """
-    #version 120
+    #version 150 core
 
     // Constants
     // ------------------------------------
@@ -359,12 +298,12 @@ class Circles(ChochinPrimitiveArray):
 
     // Varyings
     // ------------------------------------
-    varying vec4 v_fg_color;
-    varying vec4 v_bg_color;
-    varying float v_size;
-    varying float v_linewidth;
-    varying float v_antialias;
-    varying float v_discard;
+    in vec4 v_fg_color;
+    in vec4 v_bg_color;
+    in float v_size;
+    in float v_linewidth;
+    in float v_antialias;
+    in float v_discard;
 
     // Functions
     // ------------------------------------
@@ -411,8 +350,10 @@ class Circles(ChochinPrimitiveArray):
     """
 
     def __init__(self):
+        shaders = {'vertex': self.c_vert,
+                   'fragment': self.c_frag}
         ChochinPrimitiveArray.__init__(self,
-                                       [self.c_vert, self.c_frag],
+                                       shaders,
                                        gl.GL_POINTS)
 
     def set_data(self, centers, radii, colors, layers):
@@ -423,7 +364,7 @@ class Circles(ChochinPrimitiveArray):
         data_c[:, 7] = radii
         data_c[:, 8] = layers
         self.set_vbo(data_c)
-        self.attributes = ['a_position',
+        self.ins = ['a_position',
                            'a_color',
                            'a_size',
                            'a_layer']
@@ -431,33 +372,34 @@ class Circles(ChochinPrimitiveArray):
 
 class Lines(ChochinPrimitiveArray):
     vert = """
-    #version 120
+    #version 150 core
 
     // Uniforms
     uniform float u_scale;
     uniform vec3 u_push;
     uniform float u_active_layers[12];
+    uniform mat3 u_rotation;
 
-    // Attributes
-    attribute vec3  a_position;
-    attribute vec4  a_fg_color;
-    attribute float a_layer;
+    // ins
+    in vec3  a_position;
+    in vec4  a_fg_color;
+    in float a_layer;
 
-    varying vec4 v_fg_color;
-    varying float v_discard;
+    out vec4 v_fg_color;
+    out float v_discard;
 
     void main (void) {
         v_discard = u_active_layers[int(a_layer)];
         v_fg_color  = a_fg_color;
-        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
+        gl_Position = vec4((u_rotation*a_position+u_push)*u_scale,1.0);
     }
     """
 
     frag = """
-    #version 120
+    #version 150 core
 
-    varying vec4 v_fg_color;
-    varying float v_discard;
+    in vec4 v_fg_color;
+    in float v_discard;
 
     void main()
     {
@@ -469,8 +411,10 @@ class Lines(ChochinPrimitiveArray):
     """
 
     def __init__(self):
+        shaders = {'vertex': self.vert,
+                   'fragment': self.frag}
         ChochinPrimitiveArray.__init__(self,
-                                       [self.vert, self.frag],
+                                       shaders,
                                        gl.GL_LINES)
 
     def set_data(self, line_ends, colors, layers):
@@ -481,4 +425,4 @@ class Lines(ChochinPrimitiveArray):
                                     colors,
                                     layers)).astype(np.float32)
         self.set_vbo(vbo_data)
-        self.attributes = ['a_position', 'a_fg_color', 'a_layer']
+        self.ins = ['a_position', 'a_fg_color', 'a_layer']

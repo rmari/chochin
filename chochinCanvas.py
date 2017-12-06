@@ -488,13 +488,28 @@ class ChochinCanvas(QGLWidget):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
         push_vector = [0, 0, self.scene.getLargestDimension()/2.]
-        for t in ["s", "l"]:
-            if t in self.object_types:
-                self.objects[t].set_uniform('u_scale', self.scale)
-                self.objects[t].set_uniform('u_push', push_vector)
-                self.objects[t].set_uniform('u_active_layers',
-                                            self.layer_activity)
-                self.objects[t].draw()
+        if "l" in self.object_types:
+            t = "l"
+            self.objects[t].set_uniform('u_scale', self.scale)
+            self.objects[t].set_uniform('u_push', push_vector)
+            self.objects[t].set_uniform('u_active_layers',
+                                        self.layer_activity)
+            self.objects[t].set_uniform('u_rotation',
+                                          np.array(self.rotation,
+                                                   dtype=np.float32))
+            self.objects[t].draw()
+
+        if "s" in self.object_types:
+            t = "s"
+
+            self.objects[t].set_uniform('u_scale', self.scale)
+            self.objects[t].set_uniform('u_push', push_vector)
+            self.objects[t].set_uniform('u_active_layers',
+                                        self.layer_activity)
+            self.objects[t].set_uniform('u_rotation',
+                                          np.array(self.rotation,
+                                                   dtype=np.float32))
+            self.objects[t].draw()
 
         if "c" in self.object_types:
             self.objects["c"].set_uniform('u_scale', self.scale)
