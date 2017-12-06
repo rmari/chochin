@@ -11,15 +11,17 @@ def compile_shader(source, shader):
     result = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
     if not(result):
         raise RuntimeError(gl.glGetShaderInfoLog(shader))
+    print(shader)
     return shader
 
 
-def link_shader(vertex_shader, fragment_shader):
+def link_shader(*shaders):
     """Create a shader program with from compiled shaders."""
     # from http://cyrille.rossant.net/shaders-opengl/
     program = gl.glCreateProgram()
-    gl.glAttachShader(program, vertex_shader)
-    gl.glAttachShader(program, fragment_shader)
+    for shader in shaders:
+        print(shader)
+        gl.glAttachShader(program, shader)
     gl.glLinkProgram(program)
     # check linking error
     result = gl.glGetProgramiv(program, gl.GL_LINK_STATUS)
@@ -28,13 +30,19 @@ def link_shader(vertex_shader, fragment_shader):
     return program
 
 
-def make_shader_program(vertex_source, fragment_source):
+def make_shader_program(vertex_source, fragment_source, geometry_source=""):
     vs = compile_shader(vertex_source,
                         gl.glCreateShader(gl.GL_VERTEX_SHADER))
+    
     fs = compile_shader(fragment_source,
                         gl.glCreateShader(gl.GL_FRAGMENT_SHADER))
     # compile the vertex shader
-    return link_shader(vs, fs)
+    if geometry_source != "":
+        gs = compile_shader(geometry_source,
+                            gl.glCreateShader(gl.GL_GEOMETRY_SHADER))
+        return link_shader([vs, gs, fs])
+    else:
+        return link_shader([vs, fs])
 
 
 def parse_array_size(src_line):
@@ -85,9 +93,8 @@ def uniform_setter(utype, uname, usize):
 
 
 class ChochinPrimitiveArray:
-    def __init__(self, vertex_code, fragment_code, gl_primitive):
-        self.shaders_program = make_shader_program(vertex_code,
-                                                   fragment_code)
+    def __init__(self, shaders, gl_primitive):
+        self.shaders_program = make_shader_program(*shaders)
 
         self.attributes_loc = {}
         self.attributes_size = {}
@@ -97,7 +104,7 @@ class ChochinPrimitiveArray:
         self.uniforms_val = {}
         self.parse_shader_var(vertex_code, fragment_code)
         self.gl_primitive = gl_primitive
-
+    
     def parse_shader_var(self, vertex_code, fragment_code):
         in_var = parse_shader(vertex_code + fragment_code)
         for a in in_var['attribute']:
@@ -146,6 +153,88 @@ class ChochinPrimitiveArray:
         self.vbo.unbind()
 
 
+class Sticks2(ChochinPrimitiveArray):
+    s_vert = """
+    #version 150 core
+
+    // Uniforms
+    uniform float u_scale;
+    uniform vec3 u_push;
+    uniform float u_active_layers[12];
+
+    attribute vec3 a_position;
+    attribute vec4 a_fg_color;
+    attribute float a_layer;
+    attribute float a_thickness;
+
+    varying vec4 v_fg_color;
+    varying float v_discard;
+
+    void main (void) {
+        v_discard = u_active_layers[int(a_layer)];
+        v_fg_color  = a_fg_color;
+        gl_Position = vec4((a_position+u_push)*u_scale,1.0);
+        gl_PointSize = a_thickness*u_scale;
+    }
+    """
+
+    s_geom = """
+    #version 150 core
+
+    layout(lines) in;
+    layout(triangles, max_vertices = 4) out;
+
+    void main()
+    {
+        float stick_length = length(gl_in[1].gl_Position-gl_in[0].gl_Position);
+        
+        vec4 u = 0.5*gl_in[0].gl_PointSize*vec4(gl_in[1].gl_Position/stick_length, -gl_in[0].gl_Position/stick_length, 0, 0);
+        gl_Position = gl_in[0].gl_Position + u;
+        EmitVertex();
+        gl_Position = gl_in[0].gl_Position - u;
+        EmitVertex();
+        gl_Position = gl_in[1].gl_Position + u;
+        EmitVertex();
+        gl_Position = gl_in[1].gl_Position - u;
+        EmitVertex();
+        EndPrimitive();
+    }
+    """
+
+    s_frag = """
+    #version 150 core
+
+    varying vec4 v_fg_color;
+    varying float v_discard;
+
+    void main()
+    {
+        if (v_discard < 0.1) {
+            discard;
+        }
+        gl_FragColor = v_fg_color;
+    }
+    """
+
+    def __init__(self):
+        ChochinPrimitiveArray.__init__(self,
+                                       [self.s_vert, self.s_frag, self.s_geom],
+                                       gl.GL_TRIANGLES)
+
+    def set_data(self, line_ends, thicknesses, colors, layers):
+        line_ends = line_ends.reshape((-1, 3))
+        colors = np.repeat(colors, 2, axis=0)
+        layers = np.repeat(layers, 2, axis=0)
+        thicknesses = np.repeat(thicknesses, 2, axis=0)
+        vbo_data = np.column_stack((line_ends,
+                                    colors,
+                                    layers,
+                                    thicknesses)).astype(np.float32)
+        self.set_vbo(vbo_data)
+        self.attributes = ['a_position', 'a_fg_color', 'a_layer', 'a_thickness']
+
+
+
 class Sticks(ChochinPrimitiveArray):
     s_vert = """
     #version 120
@@ -186,8 +275,7 @@ class Sticks(ChochinPrimitiveArray):
 
     def __init__(self):
         ChochinPrimitiveArray.__init__(self,
-                                       self.s_vert,
-                                       self.s_frag,
+                                       [self.s_vert, self.s_frag],
                                        gl.GL_TRIANGLES)
 
     def set_data(self, line_ends, thicknesses, colors, layers):
@@ -324,8 +412,7 @@ class Circles(ChochinPrimitiveArray):
 
     def __init__(self):
         ChochinPrimitiveArray.__init__(self,
-                                       self.c_vert,
-                                       self.c_frag,
+                                       [self.c_vert, self.c_frag],
                                        gl.GL_POINTS)
 
     def set_data(self, centers, radii, colors, layers):
@@ -383,8 +470,7 @@ class Lines(ChochinPrimitiveArray):
 
     def __init__(self):
         ChochinPrimitiveArray.__init__(self,
-                                       self.vert,
-                                       self.frag,
+                                       [self.vert, self.frag],
                                        gl.GL_LINES)
 
     def set_data(self, line_ends, colors, layers):
