@@ -19,9 +19,9 @@ import sys
 import os
 import numpy as np
 
-# PyQt4 imports
-from PyQt4 import QtGui, QtCore, QtOpenGL
-from PyQt4.QtOpenGL import QGLWidget
+# PyQt5 imports
+from PyQt5 import QtGui, QtCore, QtOpenGL, QtWidgets
+from PyQt5.QtOpenGL import QGLWidget
 
 # PyOpenGL imports
 import OpenGL.GL as gl
@@ -36,7 +36,7 @@ if os.path.isfile(color_fname):
     color_palette = chochin_palette.color_palette
 else:
     color_palette = [QtCore.Qt.black,
-                     (200, 200, 200, 255),
+                     (50, 50, 50, 255),
                      QtCore.Qt.white,
                      (255, 102, 102, 255),
                      (102, 0, 0, 255),
@@ -129,7 +129,7 @@ class ChochinCanvas(QGLWidget):
         self.setSceneGeometry()
 
         pos, attrs = self.scene.getDisplayedScene()
-
+        # print(pos)
         self.object_types = []
 
         # sticks
@@ -413,7 +413,7 @@ class ChochinCanvas(QGLWidget):
             self.update()
 
     def mousePressEvent(self, event):
-        modifier = QtGui.QApplication.keyboardModifiers()
+        modifier = QtWidgets.QApplication.keyboardModifiers()
         if event.button() == QtCore.Qt.LeftButton:
             self.current_point = event.pos()
             self.translate = False
@@ -450,7 +450,6 @@ class ChochinCanvas(QGLWidget):
         """Initialize OpenGL, VBOs, upload data on the GPU, etc.
         """
         self.configureGL()
-
         self.objects = {}
         self.objects["s"] = cPrim.Sticks()
         self.objects["c"] = cPrim.Circles()
@@ -477,8 +476,7 @@ class ChochinCanvas(QGLWidget):
 
             for i in range(len(pos)):
                 if self.layer_activity[attrs["y"][i]]:
-                    painter.setPen(QtGui.QColor(*(attrs["@"][i])))
-                    painter.setPen(QtCore.Qt.black)
+                    painter.setPen(QtGui.QColor(*(np.array(attrs["@"][i])*255)))
                     painter.drawText(pos[i][0],
                                      pos[i][1],
                                      attrs["s"][i])

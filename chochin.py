@@ -17,14 +17,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# PyQt4 imports
-from PyQt4.QtCore import Qt
-from PyQt4 import QtGui, QtCore
+# PyQt5 imports
+from PyQt5 import QtGui, QtCore, QtWidgets, Qt
 
 import chochinCanvas as cCanvas
 
 
-class SceneInfoWidget(QtGui.QWidget):
+class SceneInfoWidget(QtWidgets.QWidget):
     frame_info_box = QtCore.QRectF(15, 10, 120, 18)
     layer_info_boxes = [QtCore.QRectF(a, b, 20, 20)
                         for a, b in zip(range(15, 150, 25), ([50]*6))]
@@ -54,7 +53,7 @@ class SceneInfoWidget(QtGui.QWidget):
         bgcolor = QtCore.Qt.white
         painter.setPen(bgcolor)
         painter.setBrush(bgcolor)
-        painter.drawRoundedRect(rect, 20, 20, mode=Qt.RelativeSize)
+        painter.drawRoundedRect(rect, 20, 20, mode=Qt.Qt.RelativeSize)
 
         textcolor = QtCore.Qt.black
         painter.setPen(textcolor)
@@ -92,7 +91,7 @@ class SceneInfoWidget(QtGui.QWidget):
 if __name__ == '__main__':
     import sys
 
-    class ChochinWindow(QtGui.QMainWindow):
+    class ChochinWindow(QtWidgets.QMainWindow):
         verbosity = True
         timer = QtCore.QBasicTimer()
 
@@ -147,7 +146,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Usage:\n chochin.py input_file")
         exit(1)
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     try:
         window = ChochinWindow(sys.argv[1])
         app.exec_()
