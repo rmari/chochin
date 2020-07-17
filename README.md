@@ -5,7 +5,7 @@
 Chōchin is a program to visualize computer simulations data (typically
 Molecular Dynamics data) in an easy manner. Chōchin is mostly a clone of [Yaplot](https://github.com/vitroid/Yaplot), based on
 the same idea of a simple set of commands interpreted to render an
-intentionally basic representation of 3D data. It is however based on a more modern graphic stack, using shader-based OpenGL for rendering, and PyQt4 for the GUI.
+intentionally basic representation of 3D data. It is however based on a more modern graphic stack, using shader-based OpenGL for rendering, and PyQt5 for the GUI.
 The use of Python for the GUI makes it easy to hack and modify.
 
 So far not all of Yaplot features
@@ -75,11 +75,11 @@ You can override this default palette. Just create a file called
 `chochin_palette.py` in the directory where you launch Chōchin. In this
 file, you can define a color palette as, for example:
 ```
-from PyQt4.QtCore import Qt
+from PyQt5.QtCore import Qt
 
 color_palette = [ Qt.black, Qt.gray, (0.5,0.1,0.5,0.7), ... ]
 ```
-The number of colors is unlimited. Colors can be [Qt colors](http://qt-project.org/doc/qt-4.8/qcolor.html), tuples `(r,g,b)`, or tuples `(r,g,b,a)`.
+The number of colors is unlimited. Colors can be [Qt predefined colors](https://doc.qt.io/qt-5/qcolor.html), tuples `(r,g,b)`, or tuples `(r,g,b,a)`.
 You can use transparency by playing with the `a` parameter. Note that the values are in the
 [0,1] range.
 
