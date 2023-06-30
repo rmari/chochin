@@ -50,22 +50,22 @@ cdef class chochinFile:
             o_str = o.decode()
             if o == b"c" or o == b"s":
                 n = frame_data.layers[o].size()
-                attrs[o_str] = np.empty(n, [('y', np.int, 1),
-                                            ('@', np.float32, 4),
-                                            ('r', np.float32, 1)])
+                attrs[o_str] = np.empty(n, [('y', int, 1),
+                                            ('@', float, 4),
+                                            ('r', float, 1)])
                 attrs[o_str]['y'] = frame_data.layers[o]
                 attrs[o_str]['@'] = frame_data.colors[o]
                 attrs[o_str]['r'] = frame_data.thicknesses[o]
             elif o == b"l":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
-                                        ('@', np.float32, 4)])
+                                        ('@', float, 4)])
                 attrs[o_str]['y'] = frame_data.layers[o]
                 attrs[o_str]['@'] = frame_data.colors[o]
             elif o == b"t":
                 n = frame_data.layers[o].size()
                 attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
-                                        ('@', np.float32, 4),
+                                        ('@', float, 4),
                                         ('s', ('U', 100))])
                 attrs[o_str]['y'] = frame_data.layers[o]
                 attrs[o_str]['@'] = frame_data.colors[o]
@@ -83,7 +83,7 @@ cdef class chochinFile:
         for o in frame_data_pos.keys():
             o_str = o.decode()
             pos[o_str] = np.array(frame_data_pos[o],
-                                  dtype=np.float32)
+                                  dtype=float)
             pos[o_str].shape = (-1, size[o])
         attrs = self.get_attrs(index)
 
