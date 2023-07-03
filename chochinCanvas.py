@@ -465,9 +465,11 @@ class ChochinCanvas(QGLWidget):
 
             for i in range(len(pos)):
                 if self.layer_activity[attrs["y"][i]]:
-                    painter.setPen(QtGui.QColor(*(np.array(attrs["@"][i])*255)))
-                    painter.drawText(pos[i][0],
-                                     pos[i][1],
+                    color_array = np.array(attrs["@"][i])*255
+                    color_array = color_array.astype(int)
+                    painter.setPen(QtGui.QColor(*color_array))
+                    painter.drawText(int(pos[i][0]),
+                                     int(pos[i][1]),
                                      attrs["s"][i])
 
     def glpaint(self):
