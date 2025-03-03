@@ -50,21 +50,21 @@ cdef class chochinFile:
             o_str = o.decode()
             if o == b"c" or o == b"s":
                 n = frame_data.layers[o].size()
-                attrs[o_str] = np.empty(n, [('y', int, 1),
+                attrs[o_str] = np.empty(n, [('y', int),
                                             ('@', float, 4),
-                                            ('r', float, 1)])
+                                            ('r', float)])
                 attrs[o_str]['y'] = frame_data.layers[o]
                 attrs[o_str]['@'] = frame_data.colors[o]
                 attrs[o_str]['r'] = frame_data.thicknesses[o]
             elif o == b"l":
                 n = frame_data.layers[o].size()
-                attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
+                attrs[o_str] = np.empty(n, [('y', np.uint8),
                                         ('@', float, 4)])
                 attrs[o_str]['y'] = frame_data.layers[o]
                 attrs[o_str]['@'] = frame_data.colors[o]
             elif o == b"t":
                 n = frame_data.layers[o].size()
-                attrs[o_str] = np.empty(n, [('y', np.uint8, 1),
+                attrs[o_str] = np.empty(n, [('y', np.uint8),
                                         ('@', float, 4),
                                         ('s', ('U', 100))])
                 attrs[o_str]['y'] = frame_data.layers[o]
