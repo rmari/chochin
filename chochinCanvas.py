@@ -152,7 +152,7 @@ class ChochinCanvas(QGLWidget):
     def setXRotation(self, angleX):
         sinAngleX = np.sin(angleX)
         cosAngleX = np.cos(angleX)
-        generator = np.mat([[1, 0, 0],
+        generator = np.asmatrix([[1, 0, 0],
                             [0, cosAngleX, -sinAngleX],
                             [0, sinAngleX, cosAngleX]])
         self.rotation = generator*self.rotation
@@ -160,7 +160,7 @@ class ChochinCanvas(QGLWidget):
     def setYRotation(self, angleY):
         sinAngleY = np.sin(angleY)
         cosAngleY = np.cos(angleY)
-        generator = np.mat([[cosAngleY, -sinAngleY, 0],
+        generator = np.asmatrix([[cosAngleY, -sinAngleY, 0],
                             [sinAngleY, cosAngleY, 0],
                             [0, 0, 1]])
         self.rotation = generator*self.rotation
